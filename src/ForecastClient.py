@@ -1,9 +1,10 @@
+from pathlib import Path
 import requests
 from datetime import date, timedelta
 import json
 
 
-SECRET_FILE = "secrets"   # this is where the plaintext API key is stored
+SECRET_FILE = Path("secrets")   # this is where the plaintext API key is stored
 BASE_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Durango,CO"
 #          /[date1]/[date2]?key=YOUR_API_KEY
 
@@ -31,13 +32,12 @@ This class is responsible for getting the weather forecast from Visual Crossing 
 """
 class ForecastClient:
 
-    def __init__(self, sfn=SECRET_FILE):
+    def __init__(self, sfn: str | Path=SECRET_FILE):
         self.API_KEY: str
         try:
             self.API_KEY = open(sfn).read().strip()
         except FileNotFoundError:
             print("No secret file found. Please create one.")
-
 
     def get_forecast(self, future: date | int, current=date.today()) -> list[dict]:
         """
@@ -76,10 +76,10 @@ class ForecastClient:
         data = _parse_response(response.json())
 
         # TODO THIS IS FOR TESTING
-        for d in data:
-            print(d)
-        with open("data/forecast_example.json", "w") as f:
-            json.dump(data, f, indent=4)
+        # for d in data:
+        #     print(d)
+        # with open("data/forecast_example.json", "w") as f:
+        #     json.dump(data, f, indent=4)
         # TODO END TESTING
 
         return data
