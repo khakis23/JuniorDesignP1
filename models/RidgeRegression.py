@@ -6,9 +6,6 @@ class RidgeRegression(IModel):
     def __init__(self, features: list[str], **kwargs):
         super().__init__(features)
 
-    def _set_features(self):
-        self._x = self._x[self.features]
-
     def _train_and_fit(self, **kwargs):
         # handle optional arguemnts
         tts = {}

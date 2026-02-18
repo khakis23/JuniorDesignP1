@@ -10,6 +10,12 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 
 
+"""
+Use this base class to create new models. Just implement the abstract methods depending on the model.
+Implement the IModelEval evaluation method, then use the class to evaluate your models and pick the
+best features according to how the evaluation method is set. Call ModelEval.display_best() to see 
+the results.
+"""
 class IModel(ABC):
 
     def __init__(self, features: list[str], data_obj: ModelData=ModelData()):
@@ -141,11 +147,12 @@ class IModel(ABC):
 
     @abstractmethod
     def print_results(self):
+        # this method will be called when ModelEval.display_best() is called
         pass
 
-    @abstractmethod
+    # optionally override
     def _set_features(self):
-        pass
+        self._x = self._x[self.features]
 
     @abstractmethod
     def _train_and_fit(self, **kwargs):
@@ -153,9 +160,14 @@ class IModel(ABC):
 
     @abstractmethod
     def _evaluate(self):
+        # just basic scoring like R2 and RMSE, optionally add clamping evaluation or other methods
         pass
 
 
+"""
+Implement in conjunction with IModel to evaluate many models. display_results() will cleanly
+display the best models.
+"""
 class IModelEval(ABC):
 
     def __init__(self, models: list[IModel]):
@@ -164,6 +176,7 @@ class IModelEval(ABC):
 
     @abstractmethod
     def evaluate(self):
+        # compare important features like R2, RMSE, etc., then add to self.best_models
         pass
 
     def display_best(self):

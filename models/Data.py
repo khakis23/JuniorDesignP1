@@ -15,6 +15,8 @@ Contains 2 data attributes for training models. The dataframes are already clean
     - weather:  dataframe of weather data
     - energy:   dataframe of energy data
     
+Use the _engineer_features() method to add custom features to the weather dataframe.
+    
 """
 class ModelData:
 
