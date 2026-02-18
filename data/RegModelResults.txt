@@ -1,0 +1,174 @@
+========================================================================================================================
+Features used:
+["temp","feelslike","dew","humidity","precip","precipprob","snow","snowdepth","windgust","windspeed","winddir","sealevelpressure","cloudcover","visibility","solarradiation","solarenergy","uvindex","sunazimuth","sunelevation","hsin","hcos","dsin","dcos"]
+========================================================================================================================
+
+Training 2024 models...  (2 - 4 features)
+Evaluating models...
+Done! Took 2.05 minutes — 0.06 seconds per model.
+
+	Best model(s):
+
+——— Model Features ———
+    solarenergy  hsin  hcos
+——— Scoring ———
+
+MSE: 72262.34789358218
+RMSE: 268.81656923185034
+RMSE Clamped: 264.43560854080744
+R2: 0.8179350563727429
+Alpha: 3.5564803062231287
+coef: , 374.9534577667621, 65.41355752973357, -243.99634224697274
+Intercept:  501.3867133916324
+
+
+
+Training 8855 models...   (4 - 5 features)
+Evaluating models...
+Done! Took 8.79 minutes — 0.06 seconds per model.
+
+	Best model(s):
+
+——— Model Features ———
+    cloudcover  solarradiation  hsin  hcos
+——— Scoring ———
+
+MSE: 69160.73196383947
+RMSE: 262.9842808303178
+RMSE Clamped: 257.0238332666162
+R2: 0.8285939627577721
+Alpha: 4.714866363457395
+coef: , -49.96958413599316, 360.82758660091497, 59.8689679047543, -252.93853649849615
+Intercept:  500.4157557441701
+
+——— Model Features ———
+    windgust  sealevelpressure  solarenergy  hcos
+——— Scoring ———
+
+MSE: 68884.62216136095
+RMSE: 262.45880088379766
+RMSE Clamped: 258.71376946756874
+R2: 0.8229666601732598
+Alpha: 4.714866363457395
+coef: , -33.68606339884184, 17.710667239174498, 363.7915421179594, -261.5772292057306
+Intercept:  502.53255744170104
+
+
+
+Training 33649 models...
+Evaluating models...
+Done! Took 33.47 minutes — 0.06 seconds per model.
+
+	Best model(s):
+
+——— Model Features ———
+    cloudcover  uvindex  sunazimuth  hsin  hcos
+——— Scoring ———
+
+MSE: 66859.33963521867
+RMSE: 258.5717301547458
+RMSE Clamped: 252.85379324101774
+R2: 0.835231985096768
+Alpha: 3.5564803062231287
+coef: , -50.013239649431654, 359.77986885780933, 67.34405476983898, 108.67333603127838, -268.5749992095797
+Intercept:  497.3697273662552
+
+——— Model Features ———
+    snow  snowdepth  uvindex  hsin  hcos
+——— Scoring ———
+
+MSE: 66085.82937921686
+RMSE: 257.07164250305175
+RMSE Clamped: 252.82567430844554
+R2: 0.8333545669153504
+Alpha: 4.714866363457395
+coef: , -13.918297257020747, 3.0355966026067733, 370.26531700501556, 62.1112696646116, -246.83254275845076
+Intercept:  504.05114026063103
+
+
+========================================================================================================================
+Features used:
+["temp","cloudcover","uvindex","solarenergy","solarradiation","hsin","hcos","dtemp","dwindspeed","dcloudcover","dsolarradiation","dsolarenergy"]
+========================================================================================================================
+
+
+Training 715 models...   (2 - 5)
+Evaluating models...
+Done! Took 0.11 minutes — 9.6 ms per model.
+
+	Best model(s):
+
+——— Model Features ———
+    solarenergy  hcos  dtemp  dsolarradiation
+——— Scoring ———
+
+MSE: 59158.351590800725
+RMSE: 243.22489919989837
+RMSE Clamped: 235.5965616883195
+R2: 0.8537072001544272
+Alpha: 8.286427728546842
+coef: , 324.0579654764687, -177.98841260051844, 158.0057636888476, 13.460704447157696
+Intercept:  498.8263674554183
+
+
+Training 2431 models...  (3 - 7)
+Evaluating models...
+Done! Took 0.41 minutes — 10.1 ms per model.
+
+	Best model(s):
+
+——— Model Features ———
+    temp  cloudcover  solarradiation  hcos  dtemp  dsolarenergy
+——— Scoring ———
+
+MSE: 57347.39823232382
+RMSE: 239.47316808428417
+RMSE Clamped: 229.80425210604395
+R2: 0.8639619343518756
+Alpha: 8.286427728546842
+coef: , 31.332970499554094, -53.36855749194831, 285.9437155520535, -192.54372911222313, 160.27797440351543, 17.842824639721414
+Intercept:  490.9227537722908
+
+——— Model Features ———
+    cloudcover  solarradiation  hcos  dtemp  dwindspeed  dcloudcover
+——— Scoring ———
+
+MSE: 56495.429333674765
+RMSE: 237.68767181676623
+RMSE Clamped: 229.47615909825095
+R2: 0.8595111226688391
+Alpha: 8.286427728546842
+coef: , -54.51289748588101, 312.5074842603663, -190.4562183042844, 159.39811734311328, -0.24117237144218961, 5.38061860613459
+Intercept:  498.31545781893004
+
+——— Model Features ———
+    cloudcover  solarradiation  hsin  hcos  dtemp  dcloudcover
+——— Scoring ———
+
+MSE: 57158.561688872214
+RMSE: 239.0785680249742
+RMSE Clamped: 228.73242452374896
+R2: 0.8575227359974947
+Alpha: 8.286427728546842
+coef: , -53.98188438861766, 309.0892388921807, -5.118168089567405, -187.77774074732955, 166.43055419227423, 3.848503864308668
+Intercept:  500.1977987825789
+
+
+
+Training 3223 models...  (3 - 8)
+Evaluating models...
+Done! Took 0.57 minutes — 10.6 ms per model.
+
+	Best model(s):
+
+——— Model Features ———
+    cloudcover  uvindex  solarenergy  hcos  dtemp  dwindspeed  dsolarradiation
+——— Scoring ———
+
+MSE: 53368.23711700497
+RMSE: 231.0156642243226
+RMSE Clamped: 205.7861410953609
+R2: 0.8692701021626099
+Alpha: 59.636233165946365
+coef: , -50.34751648086344, 159.0618876909584, 153.01324425661355, -189.14079239401386, 152.8019470617598, 0.16492451139404096, 11.880000014728964
+Intercept:  497.6225780178326
