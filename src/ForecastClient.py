@@ -65,7 +65,7 @@ class ForecastClient:
                 "solarenergy,uvindex,sunazimuth,sunelevation,stations,source"
                 }
 
-        print(f"Getting forecast for {future} days from {current}...")
+        print(f"Getting forecast for {current} - {future}...")
 
         # get response from API
         url = f"{BASE_URL}/{current}/{future}?key={self.API_KEY}"

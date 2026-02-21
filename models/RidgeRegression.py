@@ -3,8 +3,8 @@ from models.IModel import *
 
 class RidgeRegression(IModel):
 
-    def __init__(self, features: list[str], **kwargs):
-        super().__init__(features)
+    def __init__(self, features: list[str], data: ModelData=ModelData(), final=False, **kwargs):
+        super().__init__(features, data, final, **kwargs)
 
     def _train_and_fit(self, **kwargs):
         # handle optional arguemnts
@@ -12,9 +12,10 @@ class RidgeRegression(IModel):
         if "random_state" in kwargs:
             tts["random_state"] = kwargs["random_state"]
         if "test_size" in kwargs:
-            tts["test_size"] = kwargs["test_size"]
+            self.test_size = kwargs["test_size"]
         else:
-            tts["test_size"] = 0.2   ### default test size
+            self.test_size = 0.2  ### default test size
+        tts["test_size"] = self.test_size
 
         # train test split
         self.x_train, self.x_test, self.y_train, self.y_test \
@@ -29,6 +30,14 @@ class RidgeRegression(IModel):
         self.predictions = self.model.predict(self.x_test)
         # NOTE self.preditions is altered by _evalute to clamp to 0
 
+    def _final_train_and_fit(self, **kwargs):
+        try:
+            alpha = kwargs.get("alpha")
+        except KeyError:
+            print("No alpha value provided! Using default alpha=1.")
+            alpha = 1
+        self.model = make_pipeline(StandardScaler(), Ridge(alpha=alpha))
+        self.model.fit(self._x, self._y)
 
     def _evaluate(self):
         # normally scoring
@@ -59,13 +68,14 @@ class RidgeRegression(IModel):
         self.predictions = y_pred.to_numpy()
 
     def print_results(self):
-        print(f"MSE: {self.mse}")
-        print(f"RMSE: {self.rmse}")
-        print(f"RMSE Clamped: {self.rmse_clamped}")
-        print(f"R2: {self.r2}")
-        print(f"Alpha: {self.ridge.alpha_}")
-        print(f"coef: ", *self.ridge.coef_, sep=", ")
-        print("Intercept: ", self.ridge.intercept_[0], "\n")
+        print(f"MSE: {self.mse:.3f}")
+        print(f"RMSE: {self.rmse:.4f}")
+        print(f"RMSE Clamped: {self.rmse_clamped:.4f}")
+        print(f"R2: {self.r2:.4f}")
+        print(f"Alpha: {self.ridge.alpha_:.4f}")
+        print(f"Test Size: {self.test_size:.1%}")
+        print("Coefs:", *np.round(self.ridge.coef_, 2), sep=", ")
+        print(f"Intercept: {self.ridge.intercept_[0]:.2f}\n")
 
 
 class RidgeRegEval(IModelEval):
@@ -78,6 +88,9 @@ class RidgeRegEval(IModelEval):
         self.rmse_clamped_idx: int
 
     def evaluate(self):
+        """
+        This method implements parent method, finding model with best R2, RMSE, and RMSE Clamped.
+        """
         best_r2_raw = 0
         best_rmse_raw = np.inf
         best_rmse_clamped = np.inf

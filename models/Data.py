@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
 
+# TODO EXCLUDE BAD DAY IN MAY!!
 
 ROOT = Path(__file__).resolve().parent.parent
 WEATHER_PATH = ROOT / "data" / "DRO_2025-01-01_2026-02-09.csv"
@@ -14,16 +15,20 @@ ENERGY_PATH = ROOT / "data" / "SunnysideTotalPower2025-01-01_2026-02-12.csv"
 Contains 2 data attributes for training models. The dataframes are already cleaned and reorganized.
     - weather:  dataframe of weather data
     - energy:   dataframe of energy data
+    - features: 
     
 Use the _engineer_features() method to add custom features to the weather dataframe.
     
 """
 class ModelData:
 
-    def __init__(self):
+    def __init__(self, forcast_df: pd.DataFrame=None):
         # get data
-        try: self.weather = pd.read_csv(WEATHER_PATH)
-        except FileNotFoundError: print("No weather data found @ ", WEATHER_PATH)
+        if forcast_df is None:
+            try: self.weather = pd.read_csv(WEATHER_PATH)
+            except FileNotFoundError: print("No weather data found @ ", WEATHER_PATH)
+        else:
+            self.weather = forcast_df
         try: self.energy = pd.read_csv(ENERGY_PATH)
         except FileNotFoundError: print("No energy data found @ ", ENERGY_PATH)
 
@@ -33,11 +38,14 @@ class ModelData:
         self.weather.set_index("datetime", inplace=True)
         self.energy.set_index("timestamp", inplace=True)
 
+        self._remove_bad_data()
+
         # reorganize energy data
         self.energy = -self.energy.resample('h').mean()
 
         # drop last days to match and remove forcast hours
-        self.energy, self.weather = self.energy.align(self.weather, join="inner", axis=0)
+        if forcast_df is None:
+            self.energy, self.weather = self.energy.align(self.weather, join="inner", axis=0)
 
         # add custom features to self.features
         self.features = self.weather.copy()
@@ -68,6 +76,11 @@ class ModelData:
         # zero NaNs in derivative features
         num_cols = self.features.select_dtypes(include=["number"]).columns
         self.features[num_cols] = self.features[num_cols].fillna(0)
+
+    def _remove_bad_data(self):
+        for date in ["2025-05-05"]:
+            self.energy = self.energy.drop(pd.date_range(date, periods=24), errors="ignore")
+            self.weather = self.weather.drop(pd.date_range(date, periods=24), errors="ignore")
 
 
 if __name__ == "__main__":

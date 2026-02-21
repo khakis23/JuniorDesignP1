@@ -127,8 +127,9 @@ def main2():
 
 
 if __name__ == "__main__":
-    model = RidgeRegression(["cloudcover",  "uvindex",  "solarenergy",  "hcos",  "dtemp",   "dsolarradiation",])
-    model.print_results()
-    model.plot()
+    # model = RidgeRegression(["cloudcover",  "uvindex",  "solarenergy",  "hcos",  "dtemp",   "dsolarradiation",])
+    # model.print_results()
+    # model.plot()
 
-    # main2()
+    main2()
+

@@ -4,7 +4,7 @@ from models.Data import *
 # sklearn
 from sklearn.linear_model import *
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
@@ -18,24 +18,34 @@ the results.
 """
 class IModel(ABC):
 
-    def __init__(self, features: list[str], data_obj: ModelData=ModelData()):
+    def __init__(self, features: list[str], data_obj: ModelData=ModelData(), final=False, **kwargs):
+        self.model = None
         self.features = features
         self.elevation_df = data_obj.weather["sunelevation"]
 
         self._y = data_obj.energy
         self._x = data_obj.features  # includes all features by default
+        self._test_size: float
 
         self.predictions: np.ndarray
         self.y_test: pd.DataFrame
         self.y_train: pd.DataFrame
 
         self._set_features()
-        self._train_and_fit()
-        self._evaluate()
+        if final:
+            self._final_train_and_fit(**kwargs)
+        else:
+            self._train_and_fit(**kwargs)
+            self._evaluate()
+
+    def predict(self, x: pd.DataFrame) -> np.ndarray:
+        if self.model is None:
+            raise ValueError("Model not trained yet!")
+        self.predictions = self.model.predict(x)
+        return self.predictions
 
     def plot(self, *, title="Average PV Power by Hour", show_std=True, save_path=None, dpi=200):
         """This function is mostly written by GPT 5.2"""
-
         # --- actual (group to hourly-of-day profile) ---
         yt = self.y_test.copy()
         if isinstance(yt, pd.Series):
@@ -59,8 +69,8 @@ class IModel(ABC):
         p_std = p_std.reindex(hours)
 
         # --- total energy over the full test set (Wh, assuming hourly samples) ---
-        actual_energy_wh = y_actual.sum()
-        pred_energy_wh = y_pred.clip(lower=0).sum()
+        actual_energy_wh = y_actual.sum() * 24 / len(y_actual)
+        pred_energy_wh = y_pred.clip(lower=0).sum() * 24 / len(y_pred)
         energy_error_pct = (
             100.0 * (pred_energy_wh - actual_energy_wh) / actual_energy_wh
             if actual_energy_wh != 0 else np.nan
@@ -111,7 +121,7 @@ class IModel(ABC):
         if hasattr(self, "r2"):
             metrics.append(f"R²: {self.r2:.3f}")
         if hasattr(self, "ridge") and hasattr(self.ridge, "alpha_"):
-            metrics.append(f"α: {self.ridge.alpha_:.3g}")
+            metrics.append(f"α: {self.ridge.alpha_:.3}")
 
         ax.text(
             0.02, 0.98,
@@ -124,8 +134,8 @@ class IModel(ABC):
 
         # --- GREEN energy box (placed below blue box) ---
         energy_metrics = [
-            f"Actual Energy: {actual_energy_wh / 1000:,.2f} kWh",
-            f"Pred Energy: {pred_energy_wh / 1000:,.2f} kWh",
+            f"Actual Energy: {actual_energy_wh:,.2f} kWh",
+            f"Pred Energy: {pred_energy_wh:,.2f} kWh",
             f"Δ Energy: {energy_error_pct:+.2f}%" if np.isfinite(energy_error_pct) else "Δ Energy: N/A",
         ]
 
@@ -159,6 +169,10 @@ class IModel(ABC):
         pass
 
     @abstractmethod
+    def _final_train_and_fit(self, **kwargs):
+        pass
+
+    @abstractmethod
     def _evaluate(self):
         # just basic scoring like R2 and RMSE, optionally add clamping evaluation or other methods
         pass
@@ -181,7 +195,7 @@ class IModelEval(ABC):
 
     def display_best(self):
         for model in self.best_models:
+            model.plot()
             print("——— Model Features ——— \n  ", *model.features, sep="  ")
             print("——— Scoring ———\n")
             model.print_results()
-            model.plot()
