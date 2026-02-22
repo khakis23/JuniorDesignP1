@@ -15,16 +15,10 @@ class GradientBoostRegress(IModel):
             tts["n_estimators"] = kwargs["n_estimators"]
         if "max_depth" in kwargs:
             tts["max_depth"] = kwargs["max_depth"]
-        if "learning_rate" in kwargs:
-            tts["learning_rate"] = kwargs["learning_rate"]
-        if "random_state" in kwargs:
-            tts["random_state"] = kwargs["random_state"]
         else:
             # default values:
             tts["n_estimators"] = 100
             tts["max_depth"] = 3
-            tts["learning_rate"] = 0.1
-            tts["random_state"] = 42
             
             
 
@@ -35,8 +29,8 @@ class GradientBoostRegress(IModel):
         # train model
         self.model = make_pipeline(StandardScaler(), GradientBoostingRegressor(n_estimators=tts["n_estimators"], 
                                                                                 max_depth=tts["max_depth"],
-                                                                                learning_rate=tts["learning_rate"],
-                                                                                random_state=tts["random_state"]))
+                                                                                learning_rate=0.1,
+                                                                                random_state=42))
         self.model.fit(self.x_train, self.y_train)
         self.GradientBoostRegress = self.model.named_steps["GradientBoostRegress"]
         self.predictions = self.model.predict(self.x_test)
