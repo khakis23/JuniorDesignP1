@@ -9,24 +9,36 @@ class GradientBoostRegress(IModel):
     def _train_and_fit(self, **kwargs):
         # handle optional arguemnts
         tts = {}
+        #if "test_size" in kwargs:
+            #tts["test_size"] = kwargs["test_size"]
+        if "n_estimators" in kwargs:
+            tts["n_estimators"] = kwargs["n_estimators"]
+        if "max_depth" in kwargs:
+            tts["max_depth"] = kwargs["max_depth"]
+        if "learning_rate" in kwargs:
+            tts["learning_rate"] = kwargs["learning_rate"]
         if "random_state" in kwargs:
             tts["random_state"] = kwargs["random_state"]
-        if "test_size" in kwargs:
-            tts["test_size"] = kwargs["test_size"]
         else:
-            tts["test_size"] = 0.2   ### default test size
+            # default values:
+            tts["n_estimators"] = 100
+            tts["max_depth"] = 3
+            tts["learning_rate"] = 0.1
+            tts["random_state"] = 42
+            
+            
 
         # train test split
-        self.x_train, self.x_test, self.y_train, self.y_test \
+        self.x_train, self.x_test, self.y_train, self.y_test 
             = train_test_split(self._x, self._y, **tts)
 
         # train model
-        self.model = make_pipeline(StandardScaler(), GradientBoostingRegressor(n_estimators=100, 
-                                                                                max_depth=10,
-                                                                                learning_rate=0.1,
-                                                                                random_state=42))  # cross validation
+        self.model = make_pipeline(StandardScaler(), GradientBoostingRegressor(n_estimators=tts["n_estimators"], 
+                                                                                max_depth=tts["max_depth"],
+                                                                                learning_rate=tts["learning_rate"],
+                                                                                random_state=tts["random_state"]))
         self.model.fit(self.x_train, self.y_train)
-        self.gradBoost = self.model.named_steps["gradBoost"]
+        self.GradientBoostRegress = self.model.named_steps["GradientBoostRegress"]
         self.predictions = self.model.predict(self.x_test)
     
     def _evaluate(self):
