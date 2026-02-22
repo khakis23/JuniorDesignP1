@@ -1,43 +1,60 @@
+from abc import ABC
+
 from models.IModel import *
 
 
-class RidgeRegression(IModel):
+class NeuralNetRegression(IModel):
 
     def __init__(self, features: list[str], data: ModelData=ModelData(), final=False, **kwargs):
         super().__init__(features, data, final, **kwargs)
 
     def _train_and_fit(self, **kwargs):
-        # handle optional arguemnts
+        # handle optional arguments
         tts = {}
         if "random_state" in kwargs:
             tts["random_state"] = kwargs["random_state"]
         if "test_size" in kwargs:
-            self.test_size = kwargs["test_size"]
+            tts["test_size"] = kwargs["test_size"]
         else:
-            self.test_size = 0.2  ### default test size
-        tts["test_size"] = self.test_size
+            tts["test_size"] = 0.2
+        self.test_size = tts["test_size"]
+
+        self.alpha = kwargs["alpha"] if "alpha" in kwargs else .0001
+        self.hidden_layers = kwargs["hidden_layers"] if "hidden_layers" in kwargs else (64, 32)
+        self.max_iter = kwargs["max_iter"] if "max_iter" in kwargs else 1000
 
         # train test split
         self.x_train, self.x_test, self.y_train, self.y_test \
             = train_test_split(self._x, self._y, **tts)
 
-        # train model
-        self.model = make_pipeline(StandardScaler(), RidgeCV(alphas=np.logspace(-3, 3, 50)))  # cross validation
-        self.model.fit(self.x_train, self.y_train)
-        self.ridge = self.model.named_steps["ridgecv"]
+        # Train Neural Network
+        mlp = MLPRegressor(
+            hidden_layer_sizes=self.hidden_layers,
+            solver='adam',
+            activation='relu',
+            max_iter=self.max_iter,
+            random_state=tts.get("random_state"),
+            alpha=self.alpha
+        )
+        self.model = make_pipeline(StandardScaler(), mlp)
+        self.model.fit(self.x_train, np.ravel(self.y_train))
+
+        # Save reference to the raw MLP object for printing stats
+        self.mlp_model = self.model.named_steps["mlpregressor"]
 
         # predict
         self.predictions = self.model.predict(self.x_test)
-        # NOTE self.preditions is altered by _evalute to clamp to 0
 
-    def _final_train_and_fit(self, **kwargs):
-        try:
-            alpha = kwargs.get("alpha")
-        except KeyError:
-            print("No alpha value provided! Using default alpha=1.")
-            alpha = 1
-        self.model = make_pipeline(StandardScaler(), Ridge(alpha=alpha))
-        self.model.fit(self._x, self._y)
+    def print_results(self):
+        print(f"MSE: {self.mse:.3f}")
+        print(f"RMSE: {self.rmse:.3f}")
+        print(f"RMSE Clamped: {self.rmse_clamped:.3f}")
+        print(f"R2: {self.r2:.3f}")
+        print(f"Test Size: {self.test_size:.1%}")
+        print(f"Alpha: {self.alpha:.3f}")
+        print(f"Hidden Layers: {self.hidden_layers}")
+        print(f"Max Iterations: {self.max_iter}")
+        print(f"Epochs to converge: {self.mlp_model.n_iter_}\n")
 
     def _evaluate(self):
         # normally scoring
@@ -50,20 +67,13 @@ class RidgeRegression(IModel):
         # scoring after clamping
         self.rmse_clamped = mean_squared_error(self.y_test, self.predictions) ** 0.5
 
-    def print_results(self):
-        print(f"MSE: {self.mse:.3f}")
-        print(f"RMSE: {self.rmse:.4f}")
-        print(f"RMSE Clamped: {self.rmse_clamped:.4f}")
-        print(f"R2: {self.r2:.4f}")
-        print(f"Alpha: {self.ridge.alpha_:.4f}")
-        print(f"Test Size: {self.test_size:.1%}")
-        print("Coefs:", *np.round(self.ridge.coef_, 2), sep=", ")
-        print(f"Intercept: {self.ridge.intercept_[0]:.2f}\n")
+    def _final_train_and_fit(self, **kwargs):
+        pass
 
 
-class RidgeRegEval(IModelEval):
+class NeuralNetEval(IModelEval):
 
-    def __init__(self, models: list[RidgeRegression]):
+    def __init__(self, models: list[NeuralNetRegression]):
         super().__init__(models)
         # best model indices
         self.r2_idx: int
@@ -105,13 +115,6 @@ class RidgeRegEval(IModelEval):
 
 
 if __name__ == "__main__":
-    tests = [
-        RidgeRegression(["temp", "solarradiation", "sunelevation", "cloudcover", "sunazimuth", "solarenergy"], random_state=42),
-        RidgeRegression(["temp", "sunelevation", "cloudcover", "sunazimuth", "solarenergy"], random_state=42),
-        RidgeRegression(["temp", "sunelevation", "cloudcover", "sunazimuth", "solarenergy", "hsin", "hcos", "dsin", "dcos"], random_state=42),
-    ]
-
-    for test in tests:
-        test.print_results()
-        test.plot()
-
+    model = NeuralNetRegression(["temp",  "cloudcover",  "solarradiation",  "hcos",  "dtemp",  "dsolarradiation"])
+    model.print_results()
+    model.plot()
