@@ -8,31 +8,24 @@ class GradientBoostRegress(IModel):
         super().__init__(features)
     def _train_and_fit(self, **kwargs):
         # handle optional arguemnts
-        tts = {}
-        #if "test_size" in kwargs:
-            #tts["test_size"] = kwargs["test_size"]
+        depths = {}
         if "n_estimators" in kwargs:
-            tts["n_estimators"] = kwargs["n_estimators"]
+            self.n_estimators = kwargs["n_estimators"]
         if "max_depth" in kwargs:
-            tts["max_depth"] = kwargs["max_depth"]
+            depths["max_depth"] = kwargs["max_depth"]
         else:
             # default values:
-            tts["n_estimators"] = 100
-            tts["max_depth"] = 3
+            self.n_estimators = 100
+        depths["max_depth"] = 3
             
             
 
         # train test split
-        self.x_train, self.x_test, self.y_train, self.y_test 
-            = train_test_split(self._x, self._y, **tts)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self._x, self._y, **depths)
 
         # train model
-        self.model = make_pipeline(StandardScaler(), GradientBoostingRegressor(n_estimators=tts["n_estimators"], 
-                                                                                max_depth=tts["max_depth"],
-                                                                                learning_rate=0.1,
-                                                                                random_state=42))
+        self.model = GradientBoostingRegressor(n_estimators=self.n_estimators, max_depth=depths["max_depth"],learning_rate=0.1,random_state=42)
         self.model.fit(self.x_train, self.y_train)
-        self.GradientBoostRegress = self.model.named_steps["GradientBoostRegress"]
         self.predictions = self.model.predict(self.x_test)
     
     def _evaluate(self):
@@ -68,6 +61,3 @@ class GradientBoostRegress(IModel):
         print(f"RMSE: {self.rmse}")
         print(f"RMSE Clamped: {self.rmse_clamped}")
         print(f"R2: {self.r2}")
-        # print(f"# of trees: {}")
-
-# Note: Currently trying to match formatting and adding functionality to fit gradiant boosting
