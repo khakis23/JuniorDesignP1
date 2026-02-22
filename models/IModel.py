@@ -46,6 +46,9 @@ class IModel(ABC):
         return self.predictions
 
     def plot(self, show_std=True, save_path=None, dpi=200):
+        """
+        AI wrote a good chunk of this method.
+        """
         # actual — group to hourly-of-day profile
         yt = self.y_test.copy()
         if isinstance(yt, pd.Series):
