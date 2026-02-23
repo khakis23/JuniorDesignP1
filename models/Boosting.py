@@ -17,8 +17,6 @@ class GradientBoostRegress(IModel):
             # default values:
             self.n_estimators = 100
         depths["max_depth"] = 3
-            
-            
 
         # train test split
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self._x, self._y, **depths)
@@ -38,6 +36,16 @@ class GradientBoostRegress(IModel):
 
         # scoring after clamping
         self.rmse_clamped = mean_squared_error(self.y_test, self.predictions) ** 0.5
+
+    class NeuralNetEval(IModelEval):
+
+    def __init__(self, models: list[GradientBoostRegress]):
+        super().__init__(models)
+        # best model indices
+        self.r2_idx: int
+        self.rmse_raw_idx: int
+        self.rmse_clamped_idx: int
+
 
     def _clamp_predictions(self):
         y_pred = pd.Series(self.predictions, index=self.y_test.index)
