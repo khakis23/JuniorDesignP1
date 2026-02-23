@@ -45,6 +45,37 @@ class GradientBoostRegress(IModel):
         self.r2_idx: int
         self.rmse_raw_idx: int
         self.rmse_clamped_idx: int
+    def evaluate(self):
+        """
+        This method implements parent method, finding model with best R2, RMSE, and RMSE Clamped.
+        """
+        best_r2_raw = 0
+        best_rmse_raw = np.inf
+        best_rmse_clamped = np.inf
+
+        # find best models
+        for i, model in enumerate(self.models):
+            # R2 Raw
+            if model.r2 > best_r2_raw:
+                best_r2_raw = model.r2
+                self.r2_idx = i
+
+            # RMSE Raw
+            if model.rmse < best_rmse_raw:
+                best_rmse_raw = model.rmse
+                self.rmse_raw_idx = i
+
+            # RMSE Clamped
+            if model.rmse_clamped < best_rmse_clamped:
+                best_rmse_clamped = model.rmse_clamped
+                self.rmse_clamped_idx = i
+
+        # add best model(s) to list
+        self.best_models.append(self.models[self.r2_idx])
+        if self.r2_idx != self.rmse_raw_idx:
+            self.best_models.append(self.models[self.rmse_raw_idx])
+        if self.r2_idx != self.rmse_clamped_idx and self.rmse_raw_idx != self.rmse_clamped_idx:
+            self.best_models.append(self.models[self.rmse_clamped_idx])
 
 
     def _clamp_predictions(self):
