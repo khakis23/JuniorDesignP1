@@ -37,21 +37,20 @@ class GradientBoostRegress(IModel):
         # scoring after clamping
         self.rmse_clamped = mean_squared_error(self.y_test, self.predictions) ** 0.5
 
-    class NeuralNetEval(IModelEval):
-
-    def __init__(self, models: list[GradientBoostRegress]):
-        super().__init__(models)
-        # best model indices
-        self.r2_idx: int
-        self.rmse_raw_idx: int
-        self.rmse_clamped_idx: int
-    def evaluate(self):
-        """
-        This method implements parent method, finding model with best R2, RMSE, and RMSE Clamped.
-        """
-        best_r2_raw = 0
-        best_rmse_raw = np.inf
-        best_rmse_clamped = np.inf
+    class GradientBoostEval(IModelEval):
+        def __init__(self, models: list[GradientBoostRegress]):
+            super().__init__(models)
+            # best model indices
+            self.r2_idx: int
+            self.rmse_raw_idx: int
+            self.rmse_clamped_idx: int
+        def evaluate(self):
+            """
+            This method implements parent method, finding model with best R2, RMSE, and RMSE Clamped.
+            """
+            best_r2_raw = 0
+            best_rmse_raw = np.inf
+            best_rmse_clamped = np.inf
 
         # find best models
         for i, model in enumerate(self.models):
