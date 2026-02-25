@@ -9,6 +9,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+
 
 
 """
