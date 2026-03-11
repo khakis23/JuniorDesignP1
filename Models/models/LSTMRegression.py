@@ -42,13 +42,21 @@ class LSTMRegression(IModel):
         return np.array(x_seq), np.array(y_seq)
 
     def train_and_fit(self, tts: float = 0.0, random_state=42, **kwargs):
-        # Custom Train/Test Split (NO SHUFFLING)
+        # having issues with random states (likely GPU related?)
+        self._random_state = random_state
+        np.random.seed(random_state)
+        tf.random.set_seed(random_state)
+
+        # This will slow down training
+        # tf.config.experimental.enable_op_determinism()
+
+        # Custom Train/Test Split
         if tts > 0:
             self._test_size = tts
             self._random_state = random_state
 
             self._x["train"], self._x["test"], self._y["train"], self._y["test"] = train_test_split(
-                self._x["full"], self._y["full"], test_size=tts, shuffle=False   # TODO WHY FALSE???
+                self._x["full"], self._y["full"], test_size=tts, shuffle=False  # False for lookback
             )
 
         # Extract Keras-specific training parameters from kwargs
@@ -56,6 +64,7 @@ class LSTMRegression(IModel):
         batch_size = kwargs.get("batch_size", 64)
         lstm_units_1 = kwargs.get("lstm_units_1", 128)
         lstm_units_2 = kwargs.get("lstm_units_2", 64)
+        lstm_units_3 = kwargs.get("lstm_units_3", 32)
         dense_units = kwargs.get("dense_units", 32)
         dropout_rate = kwargs.get("dropout_rate", 0.3)
         val_split = kwargs.get("validation_split", 0.15)
@@ -78,7 +87,10 @@ class LSTMRegression(IModel):
             BatchNormalization(),
             Dropout(dropout_rate),
 
-            LSTM(lstm_units_2, activation='tanh'),
+            LSTM(lstm_units_2, return_sequences=True, activation='tanh'),
+            Dropout(dropout_rate),
+
+            LSTM(lstm_units_3, activation='tanh'),
             Dropout(dropout_rate),
 
             Dense(dense_units, activation='relu'),
@@ -109,7 +121,10 @@ class LSTMRegression(IModel):
             "Batch Size": batch_size,
             "LSTM 1": lstm_units_1,
             "LSTM 2": lstm_units_2,
+            "LSTM 3": lstm_units_3,
             "Dropout": dropout_rate,
+            "Dense Units": dense_units,
+            "Validation Split": val_split,
             "Test Size": self._test_size
         }
 
@@ -157,7 +172,8 @@ class LSTMRegression(IModel):
             "RMSE": mean_squared_error(y_true_valid, y_pred_valid) ** 0.5,
             "RMSE Clamped": mean_squared_error(y_true_valid, y_pred_c_valid) ** 0.5,
             "MAE": mean_absolute_error(y_true_valid, y_pred_valid),
-            "CI": self._get_bootstrap_safe(y_true_valid, y_pred_valid)
+            "CI": self._get_bootstrap_safe(y_true_valid, y_pred_valid),
+            # "Epochs": self.model.hi  # TODO
         }
 
 
@@ -175,20 +191,19 @@ class LSTMRegression(IModel):
         self._predictions = original_preds
         return ci
 
+
     def plot(self):
         if self._test_size:
             #  Safely grab the CI and ensure it's a tuple/list before indexing
             ci = self._scores.get("CI", (0.0, 0.0))
-
-            # If for some reason CI is a single number (scalar), wrap it in a tuple
-            if not isinstance(ci, (tuple, list, np.ndarray)):
-                ci = (ci, ci)
+            ci_display = f"[{round(ci[0], 2)} : {round(ci[1], 2)}]" if isinstance(ci, (list, tuple)) else str(round(ci, 2))
 
             display_features = {
                 "R2": round(self._scores["R2"], 3),
-                "CI": f"[{round(ci[0], 2)} : {round(ci[1], 2)}]",
+                "CI": ci_display,
                 "RMSE": round(self._scores["RMSE Clamped"], 2),
                 "Lookback": self.lookback,
+                "Epochs": s,
             }
 
             plot_daily_solar_output(

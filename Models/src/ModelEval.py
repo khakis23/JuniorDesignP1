@@ -31,21 +31,18 @@ class ModelEval:
         self.best_models = {sn: self.models[0] for sn in best_scores.keys()}
 
         # CUSTOM parameters adjustment
-        try:
+        if isinstance(best_scores["CI"], tuple):
             best_scores["CI"] = abs(best_scores["CI"][1] - best_scores["CI"][0])
-        except:
-            best_scores["CI"] = np.Inf
 
         for i, model in enumerate(self.models):
             if i == 0: continue  # already loaded first model into best_scores/best_models
             for sn, sv in model.get_scores().items():
 
                 # CUSTOM parameters
-                if sn == "CI":
-                    try:
-                        sv = abs(sv[1] - sv[0])
-                    except:
-                        sv = np.Inf
+                if sn == "CI" and isinstance(sv, tuple):
+                    # NOTE occasionally LSTMReg returns the range (not sure how this happens at the moment), so this
+                    #      is a patch to ensure nothing crashes.
+                    sv = abs(sv[1] - sv[0])
 
                 # scores that are better when higher
                 if sn in greater_than:
