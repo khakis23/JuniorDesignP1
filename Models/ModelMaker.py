@@ -5,8 +5,16 @@ from Models.src.ModelEval import ModelEval
 
 
 """
-Wrapper class. Create a single model maker per number of final models wanted. 
-This is the only class and file that ie required to train and compare all models.
+API and wrapper class for model training, evaluation, and comparison.
+
+ModelMaker abstracts the underlying model training and evaluation logic and allows for easy comparison of 
+unique combinations of parameters and models.
+
+Workflow: 
+    1. train_and_eval() — gridsearch training will train and evaluate all combinations of parameters.
+    2. choose_best() — train_and_eval() will display a best model for each type of score.
+        2a. Directly access model's methods (using ModelMaker.best.<method>) for further analysis.
+        2b. Retrain the best model on all data, and make predictions.
 """
 class ModelMaker:
 
@@ -52,7 +60,7 @@ class ModelMaker:
 
         :param idx: index of the models that have displayed using train_and_eval()
 
-        Example usage after choosing best model::
+        Example usage after choosing best model, directly access model's methods::
 
             ModelMaker.best.plot()
             scores: dict = ModelMaker.best.get_scores()

@@ -79,6 +79,8 @@ class ModelData:
 
         ### HEAT EFF-LOSS FEATURE ###
         self.features["heatloss"] = self.features["temp"] * self.features["solarradiation"]
+        self.features["celltemp"] = ((self.features["temp"] - 32) * 5 / 9
+                                     + (41 - 20) / 800 * self.features["solarradiation"])
 
     def _remove_bad_data(self):
         for date in ["2025-05-05"]:

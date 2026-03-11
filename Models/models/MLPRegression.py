@@ -39,16 +39,26 @@ class MLPRegression(IModel):
             "Hidden Activation": mlp.activation,
             "Output Activation": mlp.out_activation_,
             "Alpha": mlp.alpha,
+            "Learning Rate Init": mlp.learning_rate_init,
+            "Max Iter": mlp.max_iter,
+            "Early Stopping": mlp.early_stopping,
+            "Batch Size": mlp.batch_size,
+            "Solver": mlp.solver,
+            "Validation Fraction": mlp.validation_fraction,
         }
 
     def plot(self):
         # testing model
         if self._test_size:
+
+            ci = self._scores.get("CI", (0.0, 0.0))
+            ci_display = f"[{round(ci[0], 2)} : {round(ci[1], 2)}]" if isinstance(ci, (list, tuple)) else str(round(ci, 2))
+
             display_features = {
                 "R2": round(self._scores["R2"], 3),
-                "CI": f"[{round(self._scores['CI'][0], 2)} : {round(self._scores['CI'][1], 2)}]",
+                "CI": ci_display,
                 "RMSE": round(self._scores["RMSE Clamped"], 2),
-                "Iters": self._parameters["Iterations"],
+                "Epochs": self._parameters["Iterations"],
                 "Layers": self._parameters["Hidden Layers"],
             }
 
