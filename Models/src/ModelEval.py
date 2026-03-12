@@ -45,14 +45,14 @@ class ModelEval:
                     sv = abs(sv[1] - sv[0])
 
                 # scores that are better when higher
-                if sn in greater_than:
+                if sn in greater_than and sn in best_scores:
                     # if new best score
                     if sv > best_scores[sn]:
                         best_scores[sn] = sv
                         self.best_models[sn] = model
 
                 # scores that better when lower
-                if sn in less_than:
+                if sn in less_than and sn in best_scores:
                     if sv < best_scores[sn]:
                         best_scores[sn] = sv
                         self.best_models[sn] = model

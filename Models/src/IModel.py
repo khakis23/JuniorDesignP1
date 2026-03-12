@@ -234,3 +234,6 @@ class IModel(ABC):
 
     def get_parameters(self) -> dict[str, any]:
         return self._parameters
+
+    def get_features(self) -> list[str]:
+        return self.features

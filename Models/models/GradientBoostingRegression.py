@@ -37,14 +37,20 @@ class GradientBoostingRegression(IModel):
             "Max Depth": gb.max_depth,
             "Loss": gb.loss,
             "Subsample": gb.subsample,
+            "Min Samples Split": gb.min_samples_split,
+            "Min Samples Leaf": gb.min_samples_leaf,
         }
 
     def plot(self):
         # testing model
         if self._test_size:
+
+            ci = self._scores.get("CI", (0.0, 0.0))
+            ci_display = f"[{round(ci[0], 2)} : {round(ci[1], 2)}]" if isinstance(ci, (list, tuple)) else str(round(ci, 2))
+
             display_features = {
                 "R2": round(self._scores["R2"], 3),
-                "CI": f"[{round(self._scores['CI'][0], 2)} : {round(self._scores['CI'][1], 2)}]",
+                "CI": ci_display,
                 "RMSE": round(self._scores["RMSE Clamped"], 2),
                 "Estimators": self._parameters["Estimators"],
                 "LR": self._parameters["Learning Rate"]

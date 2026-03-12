@@ -203,7 +203,6 @@ class LSTMRegression(IModel):
                 "CI": ci_display,
                 "RMSE": round(self._scores["RMSE Clamped"], 2),
                 "Lookback": self.lookback,
-                "Epochs": s,
             }
 
             plot_daily_solar_output(
