@@ -39,6 +39,8 @@ class GradientBoostingRegression(IModel):
             "Subsample": gb.subsample,
             "Min Samples Split": gb.min_samples_split,
             "Min Samples Leaf": gb.min_samples_leaf,
+            "Validation Fraction": gb.validation_fraction,
+            "Early Stopping": gb.n_iter_no_change,
         }
 
     def plot(self):

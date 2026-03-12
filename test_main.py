@@ -102,23 +102,35 @@ if __name__ == "__main__":
     #                   },
     #                   random_state=42
     #                   )
-
+    features = [
+        ["temp", "cloudcover", "dtemp", "dsolarradiation", "windspeed", "hcos", "hsin", "celltemp"],
+        ["cloudcover", "solarradiation", "dtemp", "dsolarradiation", "windspeed", "hcos"],
+        ["temp", "cloudcover", "solarradiation", "dtemp", "dsolarradiation", "solarenergy", "hcos", "hsin", "celltemp"],
+        ["cloudcover", "dcloudcover", "hsin"],
+        ["temp", "cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "windspeed",
+         "hcos", "hsin", "celltemp"],
+        ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp"],
+        ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp",
+         "temp"],
+        ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "heatloss",
+         "temp"],
+        ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "heatloss"],
+        ["temp", "solarradiation", "dcloudcover", "dsolarradiation", "hcos"],
+        ["cloudcover", "dtemp", "dsolarradiation", "windspeed", "hcos", "hsin"],
+        ["temp", "solarradiation", "sunelevation", "cloudcover", "sunazimuth", "solarenergy"],
+    ]
 
     """ Gradient Boosting """
     mm.train_and_eval("GradientBoostingRegression",
-                        [
-                      ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "heatloss", "temp"],
-                      ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy",
-                       "hcos", "celltemp", "temp"],
-                      # ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp"],
-                            ],
-                      {
+                        features[6:8], {
                           "tts": [0.2],
-                          "n_estimators": [100, 500],
-                       "learning_rate": [0.1],
-                       "max_depth": [5, 7],
-                       "min_samples_split": [2, 4, 6],
-                       "min_samples_leaf": [1, 2, 4],
-                       "subsample": [1.0]}
-                      , random_state=42)
+                          "n_estimators": [25, 50, 75, 100, 125],
+                          "learning_rate": [0.05, 0.1],
+                          "max_depth": [3, 5],
+                          "min_samples_split": [100, 200],
+                          "min_samples_leaf": [20, 40],
+                          "subsample": [0.8],
+                          "validation_fraction": [0.1],
+                          "n_iter_no_change": [10, 20]},
+                      random_state=42)
 
