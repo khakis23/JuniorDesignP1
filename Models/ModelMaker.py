@@ -20,9 +20,11 @@ class ModelMaker:
 
     def __init__(self):
         self.trainer = Trainer()
-        self.eval = ModelEval()
+        self.eval: ModelEval
         self.best: IModel = None
         self.best_models = []
+        self.cur_model_name: str
+        self._saved_models = {}
 
         devices = tf.config.list_physical_devices()
         print(f"Available Processors: {devices}")  # if GPU appears, then it will be used
@@ -45,16 +47,19 @@ class ModelMaker:
                                     - Single value parameters must be wrapped in a list (e.g.  {"tts": 0.2} becomes {"tts": [0.2]})
         :param random_state:    Random state for train_test_split and confidence interval
         """
+        # reset
+        self.cur_model_name = model_name
+        self.eval = ModelEval()
+
         # train and evaluate
         self.eval.add_models(self.trainer.test_train(model_name, features_list, params, random_state=random_state))
         self.best_models = self.eval.evaluate()
-
 
         # display best models
         self.eval.display_best()
 
 
-    def choose_best(self, idx: int) -> IModel:
+    def save_best(self, idx: int) -> IModel:
         """
         Set the best model to self.best, which give public access to the best model object.
 
@@ -69,4 +74,12 @@ class ModelMaker:
         if not self.best_models:
             raise IndexError("ModelMaker.choose_best() cannot be called before train_and_eval().")
         self.best = self.best_models[idx]
+
+        # save the model for later
+        self._saved_models[self.cur_model_name] = self.best
+        print(f"Saved best model for {self.cur_model_name} to self.saved_models.")
+
         return self.best
+
+    def get_best_model(self, model_name: str) -> IModel:
+        return self._saved_models[model_name]

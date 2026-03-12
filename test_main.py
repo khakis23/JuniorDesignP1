@@ -110,15 +110,15 @@ if __name__ == "__main__":
                       ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "heatloss", "temp"],
                       ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy",
                        "hcos", "celltemp", "temp"],
-                      ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp"],
+                      # ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp"],
                             ],
                       {
                           "tts": [0.2],
-                          "n_estimators": [100, 250, 500],
-                       "learning_rate": [0.01, 0.1, 1],
-                       "max_depth": [3, 5, 7],
+                          "n_estimators": [100, 500],
+                       "learning_rate": [0.1],
+                       "max_depth": [5, 7],
                        "min_samples_split": [2, 4, 6],
                        "min_samples_leaf": [1, 2, 4],
-                       "subsample": [0.8, 1.0]}
-                      )
+                       "subsample": [1.0]}
+                      , random_state=42)
 
