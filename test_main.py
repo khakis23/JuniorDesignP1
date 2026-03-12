@@ -1,7 +1,5 @@
 import random
-
-import numpy as np
-from Models.ModelMaker import ModelMaker
+from Models import ModelMaker
 from util.util import feature_combo
 
 
@@ -38,27 +36,27 @@ if __name__ == "__main__":
     """ LSTM 
     (this model requires tensor flow, and recommended to run on GPU — the console will log which processor(s) is available) 
     """
-
-    mm.train_and_eval("LSTMRegression",
-                      [
-    #                       # ["cloudcover",  "solarradiation",  "dcloudcover",  "dtemp",  "dsolarradiation",  "solarenergy",  "hcos",  "heatloss"],
-    #                       # ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "heatloss", "temp"],
-                          ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp", "temp"],
-    #                       # ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp"],
-    #                       # ["temp",  "solarradiation",  "dcloudcover",  "dsolarradiation",  "hcos"]
-                      ],
-                      {
-                            "tts": [0.2],
-                            "lookback": [48],
-                            "epochs": [500],             # High cap, relying on EarlyStopping to halt at the optimal point
-                            "batch_size": [32],      # Smaller batches often help models escape local minima in tabular data
-                            "lstm_units_1": [256, 128, 64],        # Reduced from 128 to prevent the model from memorizing noise
-                            "lstm_units_2": [128, 64, 32],        # Reduced from 64 for a tighter information bottleneck
-                            "lstm_units_3": [64, 32, 16],
-                            "dense_units": [16],         # Simplified final layer
-                            "dropout_rate": [0.3],  # Standard regularization to drop overly aggressive nodes
-                            "validation_split": [0.1, 0.2]   # Consistent holdout size for validation loss tracking
-                      }, random_state=42)
+    #
+    # mm.train_and_eval("LSTMRegression",
+    #                   [
+    # #                       # ["cloudcover",  "solarradiation",  "dcloudcover",  "dtemp",  "dsolarradiation",  "solarenergy",  "hcos",  "heatloss"],
+    # #                       # ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "heatloss", "temp"],
+    #                       ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp", "temp"],
+    # #                       # ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp"],
+    # #                       # ["temp",  "solarradiation",  "dcloudcover",  "dsolarradiation",  "hcos"]
+    #                   ],
+    #                   {
+    #                         "tts": [0.2],
+    #                         "lookback": [48],
+    #                         "epochs": [500],             # High cap, relying on EarlyStopping to halt at the optimal point
+    #                         "batch_size": [32],      # Smaller batches often help models escape local minima in tabular data
+    #                         "lstm_units_1": [256, 128, 64],        # Reduced from 128 to prevent the model from memorizing noise
+    #                         "lstm_units_2": [128, 64, 32],        # Reduced from 64 for a tighter information bottleneck
+    #                         "lstm_units_3": [64, 32, 16],
+    #                         "dense_units": [16],         # Simplified final layer
+    #                         "dropout_rate": [0.3],  # Standard regularization to drop overly aggressive nodes
+    #                         "validation_split": [0.1, 0.2]   # Consistent holdout size for validation loss tracking
+    #                   }, random_state=42)
 
 
     """ MLP """
@@ -107,18 +105,20 @@ if __name__ == "__main__":
 
 
     """ Gradient Boosting """
-    # mm.train_and_eval("GradientBoostingRegressor",
-    #                     [
-    #           ["temp", "cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation",
-    #                          "solarenergy", "windspeed", "hcos", "hsin", "heatloss"],
-    #                         ["heatloss", "cloudcover", "dtemp", "solarenergy", "windspeed", "hsin", "hcos"],
-    #                     ],
-    #                   {"n_estimators": [100, 250, 500],
-    #                    "learning_rate": [0.01, 0.05, 0.1],
-    #                    "max_depth": [3, 4, 5],
-    #                    "min_samples_split": [2, 5],
-    #                    "min_samples_leaf": [1, 2, 4],
-    #                    "subsample": [0.8, 1.0]
-    #                    }, random_state=42
-    #                   )
+    mm.train_and_eval("GradientBoostingRegression",
+                        [
+                      ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "heatloss", "temp"],
+                      ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy",
+                       "hcos", "celltemp", "temp"],
+                      ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp"],
+                            ],
+                      {
+                          "tts": [0.2],
+                          "n_estimators": [100, 250, 500],
+                       "learning_rate": [0.01, 0.1, 1],
+                       "max_depth": [3, 5, 7],
+                       "min_samples_split": [2, 4, 6],
+                       "min_samples_leaf": [1, 2, 4],
+                       "subsample": [0.8, 1.0]}
+                      )
 

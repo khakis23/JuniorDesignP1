@@ -160,7 +160,8 @@ class IModel(ABC):
 
         Sets self._c_predictions to predictions clamped to 0 if elevation is 0.
         """
-        y_pred = pd.Series(self._predictions, index=self._y["test"].index)
+        index = self._y["test"].index if self._test_size else self._x["full"].index
+        y_pred = pd.Series(self._predictions, index=index)
 
         # reindex elevation data to match predictions  (sometimes getting multiple timestamps?? not sure why)
         elev = self._elevation_df

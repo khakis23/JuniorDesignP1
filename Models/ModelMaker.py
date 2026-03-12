@@ -54,7 +54,7 @@ class ModelMaker:
         self.eval.display_best()
 
 
-    def choose_best(self, idx: int):
+    def choose_best(self, idx: int) -> IModel:
         """
         Set the best model to self.best, which give public access to the best model object.
 
@@ -69,3 +69,4 @@ class ModelMaker:
         if not self.best_models:
             raise IndexError("ModelMaker.choose_best() cannot be called before train_and_eval().")
         self.best = self.best_models[idx]
+        return self.best

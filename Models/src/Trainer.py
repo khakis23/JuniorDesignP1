@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.model_selection import ParameterGrid
 
 from Data.ModelData.ModelData import ModelData
-from Models.models import GradientBoostingRegression
+from Models.models.GradientBoostingRegression import GradientBoostingRegression
 from Models.models.MLPRegression import MLPRegression
 from Models.models.RandomForestRegression import RandomForestRegression
 from Models.models.RidgeRegression import RidgeRegression

@@ -1,1 +1,1 @@
-from Models import *
+from .ModelMaker import ModelMaker

@@ -29,7 +29,7 @@ class GradientBoostingRegression(IModel):
     def _score(self, folds: int = 5):
         super()._score()
 
-        gb = self.model.named_steps["gradientboostingregression"]
+        gb = self.model.named_steps["gradientboostingregressor"]
         self._parameters = {
             "Test Size": self._test_size,
             "Estimators": gb.n_estimators,
