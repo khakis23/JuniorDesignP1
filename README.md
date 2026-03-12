@@ -41,6 +41,18 @@
 | **Features Seen** | The total number of input variables the model used. | 9          |
 | **Test Size** | The proportion of the dataset held back to evaluate the final model's performance. | 0.2        |
 
+### Gradient Boosting
+
+| Parameter | Function | Best Value |
+| :--- | :--- | :--- |
+| **Estimators** | The total number of sequential trees built to correct the errors of previous trees. | 100 |
+| **Learning Rate** | The step size shrinking the contribution of each new tree to prevent overfitting. | 0.1 |
+| **Max Depth** | The maximum number of splits allowed per tree so it learns patterns instead of just memorizing the training data. | 5 |
+| **Loss** | The specific error metric the model tries to minimize while adding new trees. | squared_error |
+| **Subsample** | The fraction of training data used to fit each individual tree. | 1.0 |
+| **Min Samples Split** | The minimum amount of data points needed in a node before it's allowed to split again. | 2 |
+| **Min Samples Leaf** | The minimum amount of data points that have to end up at the final tip of a branch. | 1 |
+| **Test Size** | The proportion of the dataset held back to evaluate the final model's performance. | 0.2 |
 
 ### LSTM Regression
 
@@ -61,11 +73,11 @@
 
 ## Model Score Comparison
 
-| Metric           | Ridge | MLP Regression | Random Forest | LSTM Regression |
-|:-----------------|:------|:---------------|:--------------| :--- |
-| **$R^2$** | 0.843 | 0.912          | 0.917         | 0.935 |
-| **CV $R^2$** | -     | 0.910          | 0.925         | - |
-| **RMSE** | 248.641 | 185.720      | 181.009       | 137.920 |
-| **RMSE Clamped** | 225.334 | 185.537      | 181.165       | 137.488 |
-| **MAE** | 184.941 | 95.373       | 89.919        | 75.055 |
-| **CI** | 0.830, 0.854 | 0.900, 0.924 | 0.905, 0.927  | 0.925, 0.944 |
+| Metric | Ridge | MLP Regression | Random Forest | Gradient Boosting | LSTM Regression |
+|:---|:---|:---|:---|:---|:---|
+| **$R^2$** | 0.843 | 0.912 | 0.917 | 0.913 | 0.935 |
+| **CV $R^2$** | - | 0.910 | 0.925 | 0.918 | - |
+| **RMSE** | 248.641 | 185.720 | 181.009 | 184.841 | 137.920 |
+| **RMSE Clamped** | 225.334 | 185.537 | 181.165 | 184.981 | 137.488 |
+| **MAE** | 184.941 | 95.373 | 89.919 | 93.530 | 75.055 |
+| **CI** | 0.830, 0.854 | 0.900, 0.924 | 0.905, 0.927 | 0.900, 0.925 | 0.925, 0.944 |
