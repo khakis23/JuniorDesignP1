@@ -131,6 +131,7 @@ if __name__ == "__main__":
                           "min_samples_leaf": [20, 40],
                           "subsample": [0.8],
                           "validation_fraction": [0.1],
-                          "n_iter_no_change": [10, 20]},
+                          "n_iter_no_change": [10, 20],
+                          "tol": [1e-3, 1e-4],},
                       random_state=42)
 

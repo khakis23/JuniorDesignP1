@@ -41,6 +41,7 @@ class GradientBoostingRegression(IModel):
             "Min Samples Leaf": gb.min_samples_leaf,
             "Validation Fraction": gb.validation_fraction,
             "Early Stopping": gb.n_iter_no_change,
+            "Tolerance": gb.tol,
         }
 
     def plot(self):
