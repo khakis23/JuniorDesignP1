@@ -124,18 +124,14 @@ if __name__ == "__main__":
     mm.train_and_eval("GradientBoostingRegression",
                         features[6:8], {
                           "tts": [0.2],
-                          "n_estimators": [25, 50, 75, 100],
+                          "n_estimators": [50, 75, 100, 150],
                           "learning_rate": [0.05, 0.1],
-                          "max_depth": [3, 5],
+                          "max_depth": [10, None],
                           "min_samples_split": [100, 200],
                           "min_samples_leaf": [20, 40],
                           "subsample": [0.8],
                           "validation_fraction": [0.1],
                           "n_iter_no_change": [10, 20],
-                          "tol": [1e-3, 1e-4],},
+                          "tol": [1e-3, 1e-7],},
                       random_state=42)
-
-    mm.save_best()
-    mm.get_best_model()
-    print(mm.best.get_parameters())
 
