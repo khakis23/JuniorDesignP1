@@ -82,17 +82,19 @@ class _ProgressBar:
     BLANK = "░"
     FULL = "█"
 
-
-    def __init__(self, max_steps: int):
+    def __init__(self, max_steps: int, warmup_gpu=True):
         self.total_bars = 30
         self.current_bar = 0
         self.total_steps = 0
         self.ratio = self.total_bars / max_steps
-        self._display()
 
         # keep annoying messages out of the progress bar
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'   # use 2 to also remove warnings
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'   # use 2 to also remove warn>
         warnings.filterwarnings("ignore")
+        if warmup_gpu:
+            self.warmup_gpu()
+
+        self._display()
 
     def update(self, update: int) -> None:
         self.total_steps += update
@@ -100,6 +102,25 @@ class _ProgressBar:
         self.current_bar = np.ceil(self.total_steps * self.ratio)
         if last != self.current_bar:
             self._display()
+
+    def warmup_gpu(self):
+        """Triggers the 5070 JIT compilation so it doesn't ruin the progress bar."""
+        import tensorflow as tf
+
+        print("Initializing Blackwell Kernels...", end="", flush=True)
+
+        # dummy model to trigger JIT comp warning
+        dummy = tf.keras.Sequential([
+            tf.keras.layers.Input(shape=(10,)),
+            tf.keras.layers.Dense(4, activation='relu'),
+            tf.keras.layers.Dense(2, activation='softplus')  # Mean/Var output
+        ])
+        dummy.compile(optimizer='adam', loss='mse')
+
+        # 2. Run one fake training step to trigger the driver logs
+        dummy.fit(np.zeros((1, 10)), np.zeros((1, 2)), epochs=1, verbose=0)
+
+        print(" Done.", flush=True)
 
     def _display(self):
         bar_chars = [self.FULL if i <= self.current_bar else self.BLANK
