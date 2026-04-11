@@ -31,6 +31,7 @@ class Trainer:
     def __init__(self):
         self.data = ModelData()
         self.models: list[IModel]
+        self.progress_bar = _ProgressBar()
 
     def test_train(self, model_name: str, features_list: list[list[str]], params: dict[str, list], random_state=42) -> list[IModel]:
         """
@@ -52,7 +53,7 @@ class Trainer:
         # time tracking
         print(f"Training {len(features_list) * len(param_combos)} models...")
         start_time = time.perf_counter()
-        progress_bar = _ProgressBar(len(features_list) * len(param_combos))
+        self.progress_bar.set_max_steps(len(features_list) * len(param_combos))
 
         # train models
         for features in features_list:
@@ -61,7 +62,7 @@ class Trainer:
                 model.train_and_fit(random_state=random_state, **params)
                 model.predict()
                 self.models.append(model)
-                progress_bar.update(1)
+                self.progress_bar.update(1)
 
         # time tracking
         time_took = time.perf_counter() - start_time
@@ -72,55 +73,73 @@ class Trainer:
 
 def clear_last_line():
     """Moves the cursor up one line and clears it completely."""
-    # \033[F moves the cursor to the beginning of the previous line
-    # \033[K clears from the cursor to the end of the line
+    # \033[F  moves the cursor to the beginning of the previous line
+    # \033[K  clears from the cursor to the end of the line
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K")
     sys.stdout.flush()
+
+
+def _warmup_gpu():
+    """Triggers the 5070 JIT compilation so it doesn't ruin the progress bar."""
+    import tensorflow as tf
+
+    print("Initializing Blackwell Kernels...", end="", flush=True)
+
+    # dummy model to trigger JIT comp warning
+    dummy = tf.keras.Sequential([
+        tf.keras.layers.Input(shape=(10,)),
+        tf.keras.layers.Dense(4, activation='relu'),
+        tf.keras.layers.Dense(2, activation='softplus')  # Mean/Var output
+    ])
+    dummy.compile(optimizer='adam', loss='mse')
+
+    # Run one fake training step to trigger the driver logs
+    dummy.fit(np.zeros((1, 10)), np.zeros((1, 2)), epochs=1, verbose=0)
+    print(" Done.", flush=True)
+
 
 class _ProgressBar:
     BLANK = "░"
     FULL = "█"
 
-    def __init__(self, max_steps: int, warmup_gpu=True):
-        self.total_bars = 30
+    def __init__(self, total_bars: int=30, warmup_gpu=True):
+        self.total_bars = total_bars
         self.current_bar = 0
         self.total_steps = 0
-        self.ratio = self.total_bars / max_steps
+        self.ratio = 0
+        self.max_steps = 0  # for tracking reset and setting ratio
 
         # keep annoying messages out of the progress bar
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'   # use 2 to also remove warn>
         warnings.filterwarnings("ignore")
         if warmup_gpu:
-            self.warmup_gpu()
+            _warmup_gpu()
 
+    def set_max_steps(self, max_steps: int) -> None:
+        self.max_steps = max_steps
+        self.ratio = self.total_bars / max_steps
         self._display()
 
     def update(self, update: int) -> None:
+        if not self.ratio:
+            print("\033[38;5;208mMust set max steps before updating!\033[0m")
+            return
+
+        # calculate progress bar update
         self.total_steps += update
         last = self.current_bar
         self.current_bar = np.ceil(self.total_steps * self.ratio)
+
+        # correctly display progress bar
         if last != self.current_bar:
             self._display()
+        if self.total_steps == self.max_steps:
+            self.reset()
 
-    def warmup_gpu(self):
-        """Triggers the 5070 JIT compilation so it doesn't ruin the progress bar."""
-        import tensorflow as tf
-
-        print("Initializing Blackwell Kernels...", end="", flush=True)
-
-        # dummy model to trigger JIT comp warning
-        dummy = tf.keras.Sequential([
-            tf.keras.layers.Input(shape=(10,)),
-            tf.keras.layers.Dense(4, activation='relu'),
-            tf.keras.layers.Dense(2, activation='softplus')  # Mean/Var output
-        ])
-        dummy.compile(optimizer='adam', loss='mse')
-
-        # 2. Run one fake training step to trigger the driver logs
-        dummy.fit(np.zeros((1, 10)), np.zeros((1, 2)), epochs=1, verbose=0)
-
-        print(" Done.", flush=True)
+    def reset(self):
+        self.total_steps = 0
+        self.current_bar = 0
 
     def _display(self):
         bar_chars = [self.FULL if i <= self.current_bar else self.BLANK

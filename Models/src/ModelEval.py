@@ -4,11 +4,16 @@ from Models.src.IModel import IModel
 from abc import ABC
 
 
-"""
-Implement in conjunction with IModel to evaluate many models. display_results() will cleanly
-display the best models.
-"""
 class ModelEval:
+    """
+    Implement in conjunction with IModel to evaluate many models. display_results() will cleanly
+    display the best models.
+
+    Attributes:
+        models: list of IModel objects
+        best_models: dict of best models by score key
+            - (e.g.  {"R2": <ModelReference>, ...}
+    """
 
     def __init__(self):
         self.models: list[IModel] = []

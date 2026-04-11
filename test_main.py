@@ -56,7 +56,33 @@ if __name__ == "__main__":
                             "dense_units": [16],         # Simplified final layer
                             "dropout_rate": [0.3],  # Standard regularization to drop overly aggressive nodes
                             "validation_split": [0.2]   # Consistent holdout size for validation loss tracking
-                      }, random_state=42)
+                      }, random_state=42,
+                      display_best=False,
+                      autosave="R2")
+
+
+    mm.train_and_eval("LSTMRegression",
+                      [
+    #                       # ["cloudcover",  "solarradiation",  "dcloudcover",  "dtemp",  "dsolarradiation",  "solarenergy",  "hcos",  "heatloss"],
+    #                       # ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "heatloss", "temp"],
+                          ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp", "temp"],
+    #                       # ["cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "hcos", "celltemp"],
+    #                       # ["temp",  "solarradiation",  "dcloudcover",  "dsolarradiation",  "hcos"]
+                      ],
+                      {
+                            "tts": [0.2],
+                            "lookback": [48],
+                            "epochs": [500],             # High cap, relying on EarlyStopping to halt at the optimal point
+                            "batch_size": [32],      # Smaller batches often help models escape local minima in tabular data
+                            "lstm_units_1": [64],        # Reduced from 128 to prevent the model from memorizing noise
+                            "lstm_units_2": [32],        # Reduced from 64 for a tighter information bottleneck
+                            "lstm_units_3": [16],
+                            "dense_units": [16],         # Simplified final layer
+                            "dropout_rate": [0.3],  # Standard regularization to drop overly aggressive nodes
+                            "validation_split": [0.2]   # Consistent holdout size for validation loss tracking
+                      }, random_state=42,
+                      display_best=False,
+                      autosave="R2")
 
 
     """ MLP """
