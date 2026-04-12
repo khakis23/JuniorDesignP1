@@ -47,7 +47,7 @@ if __name__ == "__main__":
                       ],
                       {
                             "tts": [0.2],
-                            "lookback": [48],
+                            "lookback": 48,
                             "epochs": [500],             # High cap, relying on EarlyStopping to halt at the optimal point
                             "batch_size": [32],      # Smaller batches often help models escape local minima in tabular data
                             "lstm_units_1": [64],        # Reduced from 128 to prevent the model from memorizing noise

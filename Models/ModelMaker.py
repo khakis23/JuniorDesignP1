@@ -23,8 +23,8 @@ class ModelMaker:
         self.eval: ModelEval
         self.best: IModel = None
         self.best_models = []
-        self.cur_model_name: str
-        self._saved_models = {}
+        self.cur_model_name: str = "NULL"
+        self._saved_models = []
 
         devices = tf.config.list_physical_devices()
         print(f"Available Processors: {devices}")  # if GPU appears, then it will be used
@@ -34,6 +34,7 @@ class ModelMaker:
                        features_list: list[list[str]],
                        params: dict[str, list],
                        random_state=None,
+                       random_search: float=0.0,
                        display_best=True,
                        autosave: str="",
                        ):
@@ -52,6 +53,7 @@ class ModelMaker:
                                     - If being used: train_test_split must be entered as {..., "tts": [0.2], ...}
                                     - Single value parameters must be wrapped in a list (e.g.  {"tts": 0.2} becomes {"tts": [0.2]})
         :param random_state:    Random state for train_test_split and confidence interval
+        :param random_search:   TODO NOT IMPLEMENTED
         :param display_best:    Boolean flag to display the best model's score and parameters (and plot(s)
                                     if IModel method overridden)
         :param autosave:        String name of the ModelEval score key  (examples: "R2", "MAE", "RMSE", "CI")
@@ -73,8 +75,30 @@ class ModelMaker:
             self.best = self.eval.best_models.get(autosave)
             if not self.best:
                 raise ValueError(f"ModelEval did not find score \"{autosave}\" in best_models.")
-            print("The following model has been selected...")
+
+            # save and display model
+            print(f"The following {self.cur_model_name} has been saved at index {len(self._saved_models)}...")
+            self._saved_models.append(self.best)
             self.best.print_scores()
+
+    def train_deep_ensemble(self, **kwargs):
+        # get hyperparams from existing model
+        if best_idx := kwargs.get("best_idx", None):
+            model = self.get_saved_model(best_idx)
+            params = model.get_parameters()
+            features = model.get_features()
+
+        # get hyperparams from kwargs
+        else:
+            params = kwargs.get("hp", None)
+            features = kwargs.get("f", None)
+
+        if not params: raise ValueError("`hp` kwarg is missing or model is missing hyperparameters.")
+        if not features: raise ValueError("`f` kwarg is missing or model is missing features.")
+
+        # Trainer will handle trinaing deep ensemble
+        deep_ens = self.trainer.test_train("DeepEnsemble", features, params)
+        # TODO do something, maybe just use reuse train_and_eval() depending on how we are going to evaluate the model
 
     def save_best(self, idx: int) -> IModel:
         """
@@ -93,10 +117,14 @@ class ModelMaker:
         self.best = self.best_models[idx]
 
         # save the model for later
-        self._saved_models[self.cur_model_name] = self.best   # TODO not really implemented well or useful yet
-        print(f"Saved best model for {self.cur_model_name} to self.saved_models.")
+        print(f"Saved {self.cur_model_name} at index {len(self._saved_models)}.")
+        self._saved_models.append(self.best)
 
         return self.best
 
-    def get_best_model(self, model_name: str) -> IModel:
-        return self._saved_models[model_name]
+    def get_saved_model(self, idx: int) -> IModel | None:
+        try:
+            return self._saved_models[idx]
+        except IndexError as e:
+            print("get_saved_model() index out of range!\n", e)
+            return None
