@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Callable
 
-from Data.ModelData.ModelData import ModelData
-
 # sklearn
 from sklearn.linear_model import *
 from sklearn.model_selection import train_test_split, TimeSeriesSplit, cross_val_score
@@ -35,7 +33,7 @@ User Usage:
 """
 class IModel(ABC):
 
-    def __init__(self, features: list[str], data: ModelData=ModelData()):
+    def __init__(self, features: list[str], data=None):
         self.model = None
         self.features = features
         self._elevation_df = data.weather["sunelevation"]   # for clamping
@@ -91,13 +89,13 @@ class IModel(ABC):
         else:
             self.model.fit(self._x["full"], self._y["full"])
 
-    @abstractmethod
-    def _score(self, folds: int=5):
-        """
-        After training, this method will be called calculate scores to add to self._scores
-        """
-        ts_cv = TimeSeriesSplit(n_splits=folds)
+            
+# changed this from sklearn to tensor
+def _score(self, folds: int = 5):
+    cv_r2 = np.nan
 
+    try:
+        ts_cv = TimeSeriesSplit(n_splits=folds)
         cv_scores = cross_val_score(
             self.model,
             self._x["train"],
@@ -105,16 +103,20 @@ class IModel(ABC):
             scoring="r2",
             cv=ts_cv,
         )
+        cv_r2 = np.mean(cv_scores)
+    except Exception:
+        cv_r2 = np.nan
 
-        self._scores = {
-            "R2": self.model.score(self._x["test"], self._y["test"]),
-            "CV R2": np.mean(cv_scores),
-            "RMSE": mean_squared_error(y_true=self._y["test"], y_pred=self._predictions) ** 0.5,
-            "RMSE Clamped": mean_squared_error(y_true=self._y["test"], y_pred=self._c_predictions) ** 0.5,
-            "MAE": mean_absolute_error(y_true=self._y["test"], y_pred=self._predictions),
-            "CI": self._get_bootstrap(r2_score)
-        }
+    self._scores = {
+        "R2": r2_score(self._y["test"], self._predictions),
+        "CV R2": cv_r2,
+        "RMSE": mean_squared_error(y_true=self._y["test"], y_pred=self._predictions) ** 0.5,
+        "RMSE Clamped": mean_squared_error(y_true=self._y["test"], y_pred=self._c_predictions) ** 0.5,
+        "MAE": mean_absolute_error(y_true=self._y["test"], y_pred=self._predictions),
+        "CI": self._get_bootstrap(r2_score)
+    }
 
+    
     def _get_bootstrap(self, score_func: Callable, n_resamples: int = 1000) -> tuple[float, float]:
         res =  bootstrap(
             (np.ravel(self._y["test"].values), self._predictions),
