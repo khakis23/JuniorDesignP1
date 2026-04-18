@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from Models.models.DeepEnsemble import DeepEnsemble
+from util_updated import plot_df
 
 
 class FakeData:
@@ -66,3 +67,10 @@ print("epistemic_var:", results["epistemic_var"])
 print("aleatoric_var:", results["aleatoric_var"])
 print("member_means shape:", results["member_means"].shape)
 print("member_vars shape:", results["member_vars"].shape)
+
+plot_df(
+    ensemble=ensemble,
+    X_test=X_test,
+    y_true=np.array([3.0, 7.0, 11.0]),
+    sort_by_index=False
+)
