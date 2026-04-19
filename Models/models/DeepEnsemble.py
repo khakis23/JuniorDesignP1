@@ -43,7 +43,7 @@ class DeepEnsemble(IModel):
         self.member_means = None
         self.member_vars = None
 
-        self._ensemble_params = {}
+        self._parameters = {}
 
         self.progress_bar = ProgressBar(warmup_gpu=False)  # gpu warmed in Trainer
 
@@ -55,12 +55,11 @@ class DeepEnsemble(IModel):
         self.base_model_class = kwargs.pop("base_model_class", self.base_model_class)
         self.n_models = kwargs.pop("n_models", self.n_models)
 
-        self.base_model_class = self.base_model_class
         self.models = []
         self.member_scores = []
 
         # Store ensemble configuration for logging
-        self._ensemble_params = {
+        self._parameters = {
             "base_model_class": getattr(self.base_model_class, "__name__", str(self.base_model_class)),
             "n_models": self.n_models,
             **kwargs,
@@ -90,20 +89,6 @@ class DeepEnsemble(IModel):
             self.member_scores.append(score)
 
             self.progress_bar.update(1)
-
-            # if isinstance(score, dict):
-            #     for k, v in score.items():
-            #         print(f"  {k}: {v}")
-
-            # Optionally print keras history if available
-            # if hasattr(model, "history") and model.history is not None:
-            #     hist = getattr(model.history, "history", {})
-            #     loss_hist = hist.get("loss", [])
-            #     val_loss_hist = hist.get("val_loss", [])
-                # if loss_hist:
-                #     print(f"  Final train loss: {loss_hist[-1]:.6f}")
-                # if val_loss_hist:
-                #     print(f"  Final val loss:   {val_loss_hist[-1]:.6f}")
 
     def _fit(self):
         # Base IModel expects _fit to be called, but we do that manually per-member in train_and_fit
@@ -184,21 +169,34 @@ class DeepEnsemble(IModel):
         # Call the generic scoring routine from IModel
         super()._score()
 
-        # Update the parameters dictionary with ensemble-specific uncertainty metrics
-        self._parameters = {
-            "Base Model": self._ensemble_params.get("base_model_class"),
-            "Number of Models": self.n_models,
-            "Mean Total Std": float(np.mean(self.prediction_std)) if self.prediction_std is not None else None,
-            "Mean Epistemic Std": float(
-                np.mean(np.sqrt(self.epistemic_var))) if self.epistemic_var is not None else None,
-            "Mean Aleatoric Std": float(
-                np.mean(np.sqrt(self.aleatoric_var))) if self.aleatoric_var is not None else None,
-            "Max Total Std": float(np.max(self.prediction_std)) if self.prediction_std is not None else None,
-            "Min Total Std": float(np.min(self.prediction_std)) if self.prediction_std is not None else None,
-        }
+        self._scores["totalSTD"] = float(
+            np.mean(self.prediction_std)) if self.prediction_std is not None else np.nan
+        self._scores["epSTD"] = float(
+            np.mean(np.sqrt(self.epistemic_var))) if self.epistemic_var is not None else np.nan
+        self._scores["alSTD"] = float(
+            np.mean(np.sqrt(self.aleatoric_var))) if self.aleatoric_var is not None else np.nan
+        self._scores["totalVAR"] = float(np.mean(self.total_var)) if self.total_var is not None else np.nan
+        self._scores["epVAR"] = float(np.mean(self.epistemic_var)) if self.epistemic_var is not None else np.nan
+        self._scores["alVAR"] = float(np.mean(self.aleatoric_var)) if self.aleatoric_var is not None else np.nan
+        self._scores["maxSTD"] = float(np.max(self.prediction_std)) if self.prediction_std is not None else np.nan
+        self._scores["minSTD"] = float(np.min(self.prediction_std)) if self.prediction_std is not None else np.nan
+        self._scores["95 CI"] = self.calculate_calibration_coverage(self._x["test"], self._y["test"])
+
+        # # Update the parameters dictionary with ensemble-specific uncertainty metrics
+        # self._parameters = {
+        #     "Base Model": self._ensemble_params.get("base_model_class"),
+        #     "Number of Models": self.n_models,
+        #     "Mean Total Std": float(np.mean(self.prediction_std)) if self.prediction_std is not None else None,
+        #     "Mean Epistemic Std": float(
+        #         np.mean(np.sqrt(self.epistemic_var))) if self.epistemic_var is not None else None,
+        #     "Mean Aleatoric Std": float(
+        #         np.mean(np.sqrt(self.aleatoric_var))) if self.aleatoric_var is not None else None,
+        #     "Max Total Std": float(np.max(self.prediction_std)) if self.prediction_std is not None else None,
+        #     "Min Total Std": float(np.min(self.prediction_std)) if self.prediction_std is not None else None,
+        # }
 
     def get_parameters(self) -> dict:
-        return dict(self._ensemble_params)
+        return self._parameters
 
     def get_features(self) -> list[str]:
         return self.features
@@ -244,3 +242,26 @@ class DeepEnsemble(IModel):
 
         if avg_member_std < 1e-8:
             print("WARNING: ensemble members are nearly identical.")
+
+    def calculate_calibration_coverage(self, X, y_true, multiplier=1.96) -> float:
+        """
+        Calculates the percentage of true values that fall within the 95% CI.
+        """
+        y_true = np.asarray(y_true).ravel()
+
+        # Handle Ensemble vs Single MLP
+        if hasattr(self, 'prediction_std') and self.prediction_std is not None:
+            mean_pred = self.predict(X).ravel()
+            std_pred = self.prediction_std.ravel()
+        else:
+            # For single MLP, use the mean/var method we wrote
+            mean_pred, var_pred = self.predict_mean_variance(X)
+            mean_pred = mean_pred.ravel()
+            std_pred = np.sqrt(var_pred).ravel()
+
+        # Calculate bounds
+        lower_bound = mean_pred - (multiplier * std_pred)
+        upper_bound = mean_pred + (multiplier * std_pred)
+
+        within_ci = np.logical_and(y_true >= lower_bound, y_true <= upper_bound)
+        return float(np.mean(within_ci))

@@ -39,9 +39,6 @@ class MLPRegression(IModel):
         # Call super first to set up the splits
         super().train_and_fit(tts, random_state)
 
-        # Set seeds for reproducibility
-        tf.keras.utils.set_random_seed(random_state)
-
         # Extract kwargs
         hidden_layer_sizes = kwargs.pop("hidden_layer_sizes", (100, 100))
         if isinstance(hidden_layer_sizes, int):
@@ -61,10 +58,14 @@ class MLPRegression(IModel):
         log_var_min = kwargs.pop("log_var_min", -10.0)
         log_var_max = kwargs.pop("log_var_max", 10.0)
 
-        # if kwargs:
-        #     print(kwargs)
-        #     unknown = ", ".join(sorted(kwargs.keys()))
-        #     raise TypeError("Unexpected MLPRegression kwargs: " + unknown)
+        # remove hidden kwargs that are not used by the model
+        for key in kwargs.keys():
+            if key.startswith("_"):
+                kwargs.pop(key)
+
+        if kwargs:
+            unknown = ", ".join(sorted(kwargs.keys()))
+            print("Unexpected MLPRegression kwargs: " + unknown)
 
         # Store parameters for retrieval later
         self._tf_params = {

@@ -1,6 +1,11 @@
-import matplotlib.pyplot as plt
 from datetime import date
 from Models.models.DeepEnsemble import DeepEnsemble
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+import matplotlib
+matplotlib.use('Agg')  # For leadless server
 
 """
 NOTE: This file is a bunch of AI slop!
@@ -72,11 +77,6 @@ def plot_forecasts(predictions_dict: dict, date_str=str(date.today()), save_file
     if save_filename:
         plt.savefig(save_filename, dpi=300)
     plt.show()
-
-
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 
 
 def plot_daily_solar_output(y_pred, y_actual=None, title="Daily Solar Output", metrics_dict=None, show_std=True, dpi=300, save_path=None):
@@ -206,6 +206,9 @@ def plot_daily_solar_output(y_pred, y_actual=None, title="Daily Solar Output", m
 
 def plot_de(ensemble: DeepEnsemble, X_test: np.ndarray, y_true: np.ndarray = None,
             figsize: tuple = (14, 6), alpha: float = 0.3, sort_by_index: bool = False):
+    """
+    DEPRECATED!
+    """
 
     # Get all plot-ready arrays from the ensemble
     plot_data = ensemble.get_plot_arrays(X_test, y_true=y_true, sort_by_index=sort_by_index)
@@ -324,7 +327,6 @@ def plot_deep_ensemble_eval(model, x_dict, y_dict, figsize=(16, 6), title_suffix
     # ==========================================
     # DYNAMIC TARGET HANDLING
     # ==========================================
-    # safely grab target names, join them if there are multiple
     if hasattr(model, 'targets') and model.targets:
         target_name = ", ".join(model.targets)
     else:
@@ -407,30 +409,32 @@ def plot_deep_ensemble_eval(model, x_dict, y_dict, figsize=(16, 6), title_suffix
     # RUBRIC REQUIREMENT: DECOMPOSITION METRICS
     # ==========================================
     scores = model.get_scores()
+    r2 = 0
     if scores:
         r2 = scores.get("R2", np.nan)
         rmse = scores.get("RMSE", np.nan)
 
-        # Calculate mean stds directly from the ensemble's internal state
-        mean_total_std = np.mean(std_pred)
-        mean_epi_std = np.mean(np.sqrt(model.epistemic_var)) if model.epistemic_var is not None else np.nan
-        mean_ale_std = np.mean(np.sqrt(model.aleatoric_var)) if model.aleatoric_var is not None else np.nan
+        # Retrieve pre-calculated metrics directly from the dictionary keys
+        m_total_std = scores.get("totalSTD", np.nan)
+        m_epi_std = scores.get("epSTD", np.nan)
+        m_ale_std = scores.get("alSTD", np.nan)
+        coverage = scores.get("95 CI", np.nan)
 
-        # Formatting standard deviations (σ) makes them easier to read than huge variance numbers
         text_str = (f"Model Metrics:\n"
                     f"$R^2$: {r2:.3f}\n"
                     f"RMSE: {rmse:.1f}\n"
-                    f"Total $\sigma$: {mean_total_std:.1f}\n"
-                    f"Epistemic $\sigma$: {mean_epi_std:.1f}\n"
-                    f"Aleatoric $\sigma$: {mean_ale_std:.1f}")
+                    f"Total $\sigma$: {m_total_std:.1f}\n"
+                    f"Epistemic $\sigma$: {m_epi_std:.1f}\n"
+                    f"Aleatoric $\sigma$: {m_ale_std:.1f}\n"
+                    f"95% CI: {coverage:.3f}")
 
-        # Placed in the top right corner
         props = dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.85, edgecolor='#cccccc')
         ax2.text(0.96, 0.96, text_str, transform=ax2.transAxes, fontsize=11,
                  verticalalignment='top', horizontalalignment='right', bbox=props, zorder=5)
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
+    plt.savefig(f"figures/DE_r2-{r2}.png", dpi=300, bbox_inches='tight')
 
 
 def plot_actual_vs_pred(model, x_dict, y_dict, figsize=(10, 8), title="Actual vs Predicted", **kwargs):
@@ -440,47 +444,36 @@ def plot_actual_vs_pred(model, x_dict, y_dict, figsize=(10, 8), title="Actual vs
     y_eval = y_dict["test"] if is_split else y_dict["full"]
 
     # generate predictions (returns mean only)
-    # flattened to 1D for plotting
     y_pred = model.predict(x_eval).ravel()
     y_actual = np.asarray(y_eval).ravel()
 
     fig, ax = plt.subplots(figsize=figsize)
 
-    # calculate limits for the "perfect fit" line
-    # we take the absolute min/max of both sets to ensure the line crosses the whole graph
     min_val = min(y_actual.min(), y_pred.min())
     max_val = max(y_actual.max(), y_pred.max())
-
-    # adding padding as per your styling
     pad = (max_val - min_val) * 0.1
     limit_range = [min_val - pad, max_val + pad]
 
-    # main scatter plot using your hex color
-    ax.scatter(y_actual, y_pred, alpha=0.4, edgecolors='none', color='#1f77b4', label="Predictions")
-
-    # red dashed line for perfect fit (y = x)
+    ax.scatter(y_actual, y_pred, s=40, alpha=0.4, edgecolors='none', color='#1f77b4', label="Predictions")
     ax.plot([min_val, max_val], [min_val, max_val], 'r--', alpha=0.75, zorder=3, label="Perfect Fit")
 
-    # styling and labeling
     ax.set_xlim(limit_range)
     ax.set_ylim(limit_range)
 
-    # dynamically set labels based on the model's target name
     target_name = model.targets[0] if model.targets else "Target"
     ax.set_xlabel(f"Actual {target_name}")
     ax.set_ylabel(f"Predicted {target_name}")
 
     ax.set_title(title, pad=15, fontsize=14)
     ax.grid(True, linestyle=':', alpha=0.6)
-
-    # remove spines for a cleaner look
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-
     ax.legend(frameon=True, loc="upper left")
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
+    r2 = model.get_scores().get("R2", 0)
+    plt.savefig(f"figures/actual_vs_pred_{model.__class__.__name__}_r2-{r2}.png", dpi=300, bbox_inches='tight')
 
 
 def plot_parity_with_uncertainty(model, x_dict, y_dict, figsize=(10, 8), title="parity plot with 95% ci", **kwargs):
@@ -491,8 +484,16 @@ def plot_parity_with_uncertainty(model, x_dict, y_dict, figsize=(10, 8), title="
     y_pred = model.predict(x_eval).ravel()
     y_actual = np.asarray(y_eval).ravel()
 
-    # get standard deviation for the error bars (1.96 for 95% CI)
-    y_err = 1.96 * model.prediction_std.ravel()
+    # Smart standard deviation extraction to prevent single MLP crashes
+    if hasattr(model, 'prediction_std') and model.prediction_std is not None:
+        std = model.prediction_std.ravel()
+    elif hasattr(model, 'predict_mean_variance'):
+        _, var = model.predict_mean_variance(x_eval)
+        std = np.sqrt(var).ravel()
+    else:
+        std = np.zeros_like(y_pred)
+
+    y_err = 1.96 * std
 
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -501,12 +502,8 @@ def plot_parity_with_uncertainty(model, x_dict, y_dict, figsize=(10, 8), title="
     pad = (max_val - min_val) * 0.1
     limit_range = [min_val - pad, max_val + pad]
 
-    # plot error bars first so they sit behind the scatter points
     ax.errorbar(y_actual, y_pred, yerr=y_err, fmt='none', ecolor='#1f77b4', alpha=0.2, label="95% CI")
-
-    # scatter plot on top
-    ax.scatter(y_actual, y_pred, alpha=0.6, edgecolors='white', color='#1f77b4', label="mean prediction")
-
+    ax.scatter(y_actual, y_pred, s=40, alpha=0.6, edgecolors='white', color='#1f77b4', label="mean prediction")
     ax.plot([min_val, max_val], [min_val, max_val], 'r--', alpha=0.75, zorder=3, label="perfect fit")
 
     ax.set_xlim(limit_range)
@@ -522,25 +519,11 @@ def plot_parity_with_uncertainty(model, x_dict, y_dict, figsize=(10, 8), title="
     ax.legend(frameon=True, loc="upper left")
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
+    r2 = model.get_scores().get("R2", 0)
+    plt.savefig(f"figures/parity_with_uncertainty_{model.__class__.__name__}_r2-{round(r2, 5)}.png", dpi=300, bbox_inches='tight')
 
 
-def calculate_calibration_coverage(self, X, y_true, multiplier=1.96):
-    """
-    Calculates the percentage of true values that fall within the 95% CI.
-    multiplier=1.96 corresponds to a 95% confidence interval for a normal distribution.
-    """
-    # ensure predictions exist
-    mean_pred = self.predict(X).ravel()
-    std_pred = self.prediction_std.ravel()
-    y_true = np.asarray(y_true).ravel()
-
-    # calculate bounds
-    lower_bound = mean_pred - (multiplier * std_pred)
-    upper_bound = mean_pred + (multiplier * std_pred)
-
-    # count how many true values fall inside the bounds
-    within_ci = np.logical_and(y_true >= lower_bound, y_true <= upper_bound)
-    coverage_fraction = np.mean(within_ci)
-
-    return float(coverage_fraction)
+def deep_ensemble_wrapper(model, x, y, **kwargs):
+    plot_parity_with_uncertainty(model, x, y, **kwargs)
+    plot_deep_ensemble_eval(model, x, y, **kwargs)

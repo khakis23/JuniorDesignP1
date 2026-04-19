@@ -1,44 +1,44 @@
-import os
-import random
-import sys
-import time
-import warnings
-from typing import Any
-import pandas as pd
+from Models.src.ProgressBar import hide_warnings
 
+hide_warnings()  # must go before tf import
+
+import random
+import time
+import pandas as pd
 import numpy as np
 from sklearn.model_selection import ParameterGrid
+import tensorflow as tf
 
-from Data.ModelData.ModelData import ModelData
-from Models.models.GradientBoostingRegression import GradientBoostingRegression
-from Models.models.MLPRegression import MLPRegression
-from Models.models.RandomForestRegression import RandomForestRegression
-from Models.models.RidgeRegression import RidgeRegression
-from Models.models.LSTMRegression import LSTMRegression
-from Models.src.ModelEval import ModelEval
+from Models.src.factories import *
 from Models.src.IModel import IModel
-from Models.models.DeepEnsemble import DeepEnsemble
 from Models.src.ProgressBar import ProgressBar
-from datasets import data_handler as h
 
 
 class Trainer:
+    """
+        Core execution engine for model initialization, hyperparameter grid searching, and training.
 
-    # Implemented models go here
-    MODEL_FACTORY = {
-        "RidgeRegression": RidgeRegression,
-        "LSTMRegression": LSTMRegression,
-        "MLPRegression": MLPRegression,
-        "RandomForestRegression": RandomForestRegression,
-        "GradientBoostingRegression": GradientBoostingRegression,
-        "DeepEnsemble": DeepEnsemble,
-    }
-    # Built-in datasets go here:
-    #   - must return (features, targets, data, <optional>data_test)
-    DATABASE_FACTORY = {
-        "CHF": h.load_CHF,
-        "Reactor": h.load_reactor,
-    }
+        The Trainer class acts as the bridge between the high-level API (`ModelMaker`) and the
+        low-level model implementations (`IModel`). Its primary responsibility is to manage the heavy
+        lifting of training loops, data routing, and experimental reproducibility.
+
+        How it Works:
+            When provided with a dictionary of hyperparameters,
+            it converts them into a comprehensive Cartesian grid. It enforces global random seeds across
+            Python, Numpy, and TensorFlow, and then iteratively handles the initialization, training, and prediction
+            phases for every model combination in the grid.
+
+        Usage:
+            This class is generally not instantiated or interacted with directly by the end-user. Instead,
+            it operates entirely under the `ModelMaker` class. `ModelMaker` passes the
+            user-defined datasets, feature lists, and parameter grids down to the `Trainer.test_train()`
+            method, which executes the computational loops and returns the fully trained models
+            back to the evaluator.
+        """
+
+    # See factories.py for more info
+    MODEL_FACTORY = MODEL_FACTORY
+    DATABASE_FACTORY = DATABASE_FACTORY
 
     def __init__(self):
         self.models: list[IModel] = []
@@ -48,22 +48,46 @@ class Trainer:
                    model_name: str,
                    dataset: str | pd.DataFrame,
                    params: dict[str, list],
-                   random_state=42,
-                   random_search: int=0,
-                   features_list: list[list[str]] | None=None,
-                   target_cols: list[str] | None=None,
+                   random_state=None,
+                   random_search: int = 0,
+                   features_list: list[list[str]] | None = None,
+                   target_cols: list[str] | None = None,
                    plot_func=None,
                    p_bar_enabled=True) -> list[IModel]:
         """
+        Executes the loop to train models across all feature and hyperparameter grids.
 
-        :param model_name:
-        :param features_list:
-        :param params:
-            - NOTE: if being used: train_test_split must be entered as {..., "tts": 0.2, ...}
+        Responsibilities:
+            - Setting random state across Python, Numpy, and TensorFlow.
+            - Loading data from pre-defined dataset (see `factories.py`) or a custom passed DataFrame.
+            - Instantiated base model if a DeepEnsemble is trained.
+                * NOTE: Poorly implemented hard-coded way of doing this...
+            - Creating the grid of parameters and features, and applying random search if inputted.
+            - Train, fit, and predict for every model combination.
 
-        :return:
+        :param model_name:      String name of the model architecture to train (must exist in MODEL_FACTORY).
+        :param dataset:         String referencing a built-in dataset (e.g., "CHF") or a custom pandas DataFrame.
+        :param params:          Dictionary of hyperparameters. Values can be single items or lists of items to try.
+                                NOTE: `train_test_split` ratio must be passed via this dictionary as `{"tts": [0.2]}`.
+        :param random_state:    Integer to lock global seeds across Python, Numpy, and TF, or None for true randomness.
+        :param random_search:   Integer representing the target number of models to sample from the total grid space.
+        :param features_list:   List containing lists of feature names. Required if passing a custom DataFrame.
+                                Example: [["Temp", "Pressure"], ["Temp", "Pressure", "Flow"]]
+        :param target_cols:     List of target column names. Required if passing a custom DataFrame.
+        :param plot_func:       Optional callable plotting function to bind to the trained models.
+        :param p_bar_enabled:   Boolean flag to show or hide the terminal progress bar during the training loop.
+
+        :return:                A list of fully trained `IModel` instances corresponding to every executed combination.
         """
         self.models = []  # reset
+
+        # Set TensorFlow random state
+        if random_state is not None:
+            random.seed(random_state)
+            np.random.seed(random_state)
+            tf.random.set_seed(random_state)
+            tf.keras.utils.set_random_seed(random_state)
+            tf.config.experimental.enable_op_determinism()
 
         ### Load dataset ###
         data: pd.DataFrame
@@ -89,7 +113,7 @@ class Trainer:
                 raise ValueError("Must provide `features_list` if passing in custom dataset.")
 
         ### Train, fit, and predict ###
-       # convert all values in params to lists for param combinations
+        # convert all values in params to lists for param combinations
         for k, v in params.items():
             if not isinstance(v, list):
                 params[k] = [v]
@@ -120,7 +144,7 @@ class Trainer:
         if p_bar_enabled:
             self.progress_bar.set_max_steps(n_models)
 
-        # Train model(s)
+        # Train model(s) in grid search
         for features in features_list_:
             for p in param_combos:
                 model = self.MODEL_FACTORY[model_name](

@@ -36,8 +36,8 @@ class ModelEval:
 
         :return: {"<score_name>": <model_reference>, ...>}  (e.g.  {"R2": <ModelReference>, ...}
         """
-        greater_than = ["R2", "CV R2"]
-        less_than = ["RMSE", "MAE", "RMSE Clamped", "CI"]
+        greater_than = ["R2", "CV R2", "95 CI"]
+        less_than = ["RMSE", "MAE", "RMSE Clamped", "CI", "epSTD", "totalSTD"]
 
         print(f"Evaluating {len(self.models)} models...")
 
