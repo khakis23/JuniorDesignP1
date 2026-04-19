@@ -7,7 +7,6 @@ if __name__ == "__main__":
     features = feature_combo(["D", "L", "P", "G",  "Tin", "Xe"], 4, 6)
     params = {
         "tts": [0.2],
-        "output_type": ["mean_variance"],
         "log_var_min": [-10.0],
         "log_var_max": [10.0],
         "validation_split": [0.1],
