@@ -68,7 +68,7 @@ if __name__ == "__main__":
             "epochs": 50,
             "early_stopping": True,
         },
-        plot_func=calculate_calibration_coverage,
+        plot_func=plot_parity_with_uncertainty,
         autosave="R2",
         # random_search=15,
     )
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     mm.train_eval_deep_ens(
         "CHF",
-        plot_func=calculate_calibration_coverage,
+        plot_func=plot_parity_with_uncertainty,
         n_models=10,
     )
 
