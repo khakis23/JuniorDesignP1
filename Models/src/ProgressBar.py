@@ -38,6 +38,14 @@ def _warmup_gpu():
     print(" Done.", flush=True)
 
 
+def hide_warnings():
+    """Might have to call before importing TF"""
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 3 hides warnings for cleaner JIT logs
+    warnings.filterwarnings("ignore")
+    import tensorflow as tf
+    tf.get_logger().setLevel('ERROR')
+
+
 class ProgressBar:
     """
     Terminal UI for tracking training progress.
@@ -53,8 +61,7 @@ class ProgressBar:
         self.max_steps = 0  # for tracking reset and setting ratio
 
         # keep annoying messages out of the progress bar
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 3 hides warnings for cleaner JIT logs
-        warnings.filterwarnings("ignore")
+        hide_warnings()
         if warmup_gpu:
             _warmup_gpu()
 

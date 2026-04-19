@@ -1,4 +1,9 @@
+from Models.src.ProgressBar import hide_warnings
+hide_warnings()  # must go before tf import
+
 import tensorflow as tf
+import pandas as pd
+
 from Models.src.IModel import IModel
 from Models.src.Trainer import Trainer
 from Models.src.ModelEval import ModelEval
@@ -20,7 +25,7 @@ class ModelMaker:
 
     def __init__(self):
         self.trainer = Trainer()
-        self.eval: ModelEval
+        self.eval: ModelEval = ModelEval()
         self.best: IModel = None
         self.best_models = []
         self.cur_model_name: str = "NULL"
@@ -31,10 +36,13 @@ class ModelMaker:
 
     def train_and_eval(self,
                        model_name: str,
+                       dataset: pd.DataFrame | str,
                        features_list: list[list[str]],
                        params: dict[str, list],
-                       random_state=None,
-                       random_search: float=0.0,
+                       target_cols: list[str] = None,
+                       plot_func=None,
+                       random_state=42,
+                       random_search: int=0,
                        display_best=True,
                        autosave: str="",
                        ):
@@ -60,10 +68,18 @@ class ModelMaker:
         """
         # reset
         self.cur_model_name = model_name
-        self.eval = ModelEval()
+        self.eval.clear_models()
 
         # train and evaluate
-        self.eval.add_models(self.trainer.test_train(model_name, features_list, params, random_state=random_state))
+        self.eval.add_models(self.trainer.test_train(
+            model_name,
+            dataset,
+            params,
+            random_search=random_search,
+            target_cols=target_cols,
+            features_list=features_list,
+            plot_func=plot_func,
+            random_state=random_state))
         self.best_models = self.eval.evaluate()
 
         # display best models
@@ -79,26 +95,101 @@ class ModelMaker:
             # save and display model
             print(f"The following {self.cur_model_name} has been saved at index {len(self._saved_models)}...")
             self._saved_models.append(self.best)
-            self.best.print_scores()
+            self.best.print_parameters()
 
-    def train_deep_ensemble(self, **kwargs):
-        # get hyperparams from existing model
-        if best_idx := kwargs.get("best_idx", None):
+    def train_eval_deep_ens(self,
+                            dataset: pd.DataFrame | str,
+                            best_idx: int = None,
+                            base_model: str = None,
+                            target_cols: list[str] | None = None,
+                            n_models: int = 5,
+                            features: list[list[str]] = None,
+                            params: dict = {},
+                            plot_func=None,
+                            random_state=42,
+                            auto_save: str | bool = False,
+                            ):
+        """
+
+            - If best_idx is None and base_model is None, then self.best is used.
+
+        :param dataset:
+        :param best_idx:
+        :param target_cols:
+        :param base_model:
+        :param n_models:
+        :param features:
+        :param params:
+        :param random_state:
+        :return:
+        """
+        ### Figure out how model params were passed into function
+        model: IModel | None = None
+        params_ = params
+
+        # Model by saved index
+        if best_idx:
             model = self.get_saved_model(best_idx)
-            params = model.get_parameters()
-            features = model.get_features()
 
-        # get hyperparams from kwargs
+        # Model inferred from autosaved or selected best model
+        elif not base_model:
+            if self.best:
+                model = self.best
+            else:
+                raise ValueError("ModelMaker.train_deep_ensemble() requires a selected best model if no base_model is provided.")
+
+        # Reused a previously trained model's parameters
+        if model:
+            # pull hyperparams and features from model
+            params_ = model.get_parameters()
+            features = [model.get_features()]
+            target_cols = model.get_targets()
+
+            # add model name to params
+            params_["base_model_class"] = model.__class__.__name__
+
+        # Incorrect input combination: there are 3 different ways to pass parameters for this method (see docstring)
+        elif not base_model or not features or not target_cols:
+            raise ValueError("ModelMaker.train_deep_ensemble() either requires a base_model, features, "
+                             "and target_cols, or a selected best model.")
+
+        # Manually inputted parameters (correctly)
         else:
-            params = kwargs.get("hp", None)
-            features = kwargs.get("f", None)
+            params_["base_model_class"] = base_model
 
-        if not params: raise ValueError("`hp` kwarg is missing or model is missing hyperparameters.")
-        if not features: raise ValueError("`f` kwarg is missing or model is missing features.")
+        if n_models:  # TODO other paramerter overides when selecting existing model??
+            params_["n_models"] = n_models
 
-        # Trainer will handle trinaing deep ensemble
-        deep_ens = self.trainer.test_train("DeepEnsemble", features, params)
-        # TODO do something, maybe just use reuse train_and_eval() depending on how we are going to evaluate the model
+        ### Train Deep Ensemble
+        deep_ens_s = self.trainer.test_train(
+            model_name="DeepEnsemble",
+            dataset=dataset,
+            params=params_,
+            features_list=features,
+            target_cols=target_cols,
+            plot_func=plot_func,
+            random_state=random_state,
+            p_bar_enabled=False,
+        )
+
+        ### Evaluate
+        self.eval.add_models(deep_ens_s)
+
+        # multiple models
+        if len(deep_ens_s) > 1:
+            self.best_models = self.eval.evaluate()
+            self.eval.display_best()
+
+        # single model
+        else:
+            self.best_models = self.eval.display_best(deep_ens_s[0])
+
+        # autosave
+        if auto_save:
+            if isinstance(auto_save, str):
+                self.save_best(self.eval.best_models.get(auto_save))
+            else:
+                self.save_best(0)
 
     def save_best(self, idx: int) -> IModel:
         """
@@ -121,6 +212,9 @@ class ModelMaker:
         self._saved_models.append(self.best)
 
         return self.best
+
+    def clear_evaluator(self):
+        self.eval.clear_all()
 
     def get_saved_model(self, idx: int) -> IModel | None:
         try:

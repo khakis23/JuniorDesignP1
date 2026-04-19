@@ -9,8 +9,10 @@ scikit-learn>=1.4.0
 
 # Deep Learning with GPU Support (Optimized for RTX 50-series)
 # The [and-cuda] extra ensures proper GPU library linking in 2026
-tensorflow[and-cuda]>=2.17.0
+tensorflow[and-cuda]>=2.15.0
 
 # Optional but recommended for Jupyter and Keras model saving
 h5py>=3.10.0
 ipykernel
+
+xarray

@@ -4,16 +4,24 @@ from Models.src.IModel import IModel
 from abc import ABC
 
 
-class ModelEval:
-    """
-    Implement in conjunction with IModel to evaluate many models. display_results() will cleanly
-    display the best models.
+"""
+Implement in conjunction with IModel to evaluate many models. display_results() will cleanly
+display the best models.
+"""
 
-    Attributes:
-        models: list of IModel objects
-        best_models: dict of best models by score key
-            - (e.g.  {"R2": <ModelReference>, ...}
-    """
+
+def _display(model: IModel, count: int=-1, score_name: str=""):
+    if score_name:
+        print(f"\n\n======== Model {count} | Best {score_name} ========")
+    model.plot()
+    print("\n————— Scoring —————")
+    model.print_scores()
+    print("\n ————— Model Parameters —————")
+    model.print_parameters()
+    print("\n————— Model Features ————— \n", *model.features, sep="  ")
+
+
+class ModelEval:
 
     def __init__(self):
         self.models: list[IModel] = []
@@ -30,6 +38,8 @@ class ModelEval:
         """
         greater_than = ["R2", "CV R2"]
         less_than = ["RMSE", "MAE", "RMSE Clamped", "CI"]
+
+        print(f"Evaluating {len(self.models)} models...")
 
         # compare important features like R2, RMSE, etc., then add to self.best_models
         best_scores = self.models[0].get_scores()
@@ -64,16 +74,23 @@ class ModelEval:
 
         return [x for x in self.best_models.values()]
 
-    def display_best(self):
+    def display_best(self, model=None):
         """
         """
+        # passed in single model to display
+        if model:
+            _display(model)
+            return
+
+        # display saved best evaluated model
         count = 0
-        for sn, model in self.best_models.items():
+        for sn, m in self.best_models.items():
             count += 1
-            print(f"\n\n======== Model {count} | Best {sn} ========")
-            model.plot()
-            print("\n————— Scoring —————")
-            model.print_scores()
-            print("\n ————— Model Parameters —————")
-            model.print_parameters()
-            print("\n————— Model Features ————— \n", *model.features, sep="  ")
+            _display(m, count, sn)
+
+    def clear_models(self):
+        self.models = []
+
+    def clear_all(self):
+        self.clear_models()
+        self.best_models = {}
