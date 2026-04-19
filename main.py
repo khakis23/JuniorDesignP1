@@ -43,11 +43,12 @@ if __name__ == "__main__":
 
 
     def func_wrapper_test(model, x, y, **kwargs):
-        calculate_calibration_coverage(model, x, y, **kwargs)
+        # calculate_calibration_coverage(model, x, y, **kwargs)
         plot_parity_with_uncertainty(model, x, y, **kwargs)
+        plot_deep_ensemble_eval(model, x, y, **kwargs)
 
 
-    features = feature_combo(["D", "L", "P", "G", "Tin", "Xe"], 4, 6)
+    features = feature_combo(["D", "L", "P", "G",  "Tin", "Xe"], 4, 6)
     print("Total Features:", len(features))
 
     feat, targ, fake_data_train, fake_data_test = load_fake_data(1000, 0.2, random_state=42)
@@ -68,7 +69,7 @@ if __name__ == "__main__":
             "epochs": 50,
             "early_stopping": True,
         },
-        plot_func=plot_parity_with_uncertainty,
+        # plot_func=calculate_calibration_coverage,
         autosave="R2",
         # random_search=15,
     )
@@ -79,8 +80,8 @@ if __name__ == "__main__":
 
     mm.train_eval_deep_ens(
         "CHF",
-        plot_func=plot_parity_with_uncertainty,
-        n_models=10,
+        plot_func=func_wrapper_test,
+        n_models=5,
     )
 
     # features = feature_combo(["temp", "cloudcover", "solarradiation", "dcloudcover", "dtemp", "dsolarradiation", "solarenergy", "windspeed", "hcos", "hsin", "celltemp"], 3, 11)
