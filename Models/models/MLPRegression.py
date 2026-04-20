@@ -59,7 +59,7 @@ class MLPRegression(IModel):
         log_var_max = kwargs.pop("log_var_max", 10.0)
 
         # remove hidden kwargs that are not used by the model
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             if key.startswith("_"):
                 kwargs.pop(key)
 
@@ -83,7 +83,6 @@ class MLPRegression(IModel):
             "random_state": random_state,
             "log_var_min": log_var_min,
             "log_var_max": log_var_max,
-            "output_type": "mean_variance",
         }
 
         # Determine which data to fit on based on tts and pre-split indicators
@@ -157,7 +156,7 @@ class MLPRegression(IModel):
             "validation_split": self._tf_params.get("validation_split"),
             "early_stopping": self._tf_params.get("early_stopping"),
             "l2_alpha": self._tf_params.get("l2_alpha"),
-            "output_type": self._tf_params.get("output_type"),
+            # "output_type": self._tf_params.get("output_type"),
             "log_var_min": self._tf_params.get("log_var_min"),
             "log_var_max": self._tf_params.get("log_var_max"),
 

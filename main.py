@@ -5,7 +5,6 @@ from util.arg_parser import parse_args_save_paths
 
 
 if __name__ == "__main__":
-
     parse_args_save_paths()
 
     mm = ModelMaker()
@@ -28,4 +27,8 @@ if __name__ == "__main__":
         # random_search=15,
     )
 
-
+    mm.train_eval_deep_ens(
+        "CHF",
+        plot_func=deep_ensemble_wrapper,
+        n_models=2,
+    )
