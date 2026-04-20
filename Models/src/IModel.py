@@ -62,7 +62,7 @@ class IModel(ABC):
            or outputs multiple elements (like predicting mean AND variance).
     """
 
-    def __init__(self, features: list[str], targets: list[str], data: pd.DataFrame, data_test: pd.DataFrame = None,
+    def __init__(self, features: list[str], targets: list[str], data: pd.DataFrame, data_test: pd.DataFrame=None,
                  plot_func: Callable = None):
         """
         :param features:    List of string column names representing the independent variables (X).

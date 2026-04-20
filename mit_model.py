@@ -36,15 +36,15 @@ if __name__ == "__main__":
         autosave="R2",
         plot_func=plot_actual_vs_pred,
         random_state=42,
-        random_search=200
+        random_search=200,
     )
     mm.train_eval_deep_ens(
-        "CHF",
+        "Reactor",
         plot_func=deep_ensemble_wrapper,
         n_models=6,
     )
     mm.train_eval_deep_ens(
-        "CHF",
+        "Reactor",
         plot_func=deep_ensemble_wrapper,
         n_models=100,
     )
