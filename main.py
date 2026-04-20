@@ -1,12 +1,12 @@
 from Models.ModelMaker import ModelMaker
 from util.util import feature_combo
 from util.plots import *
+from util.arg_parser import parse_args_save_paths
 
 
 if __name__ == "__main__":
 
-    features = feature_combo(["D", "L", "P", "G",  "Tin", "Xe"], 4, 6)
-    print("Total Features:", len(features))
+    parse_args_save_paths()
 
     mm = ModelMaker()
 
@@ -28,6 +28,4 @@ if __name__ == "__main__":
         # random_search=15,
     )
 
-    # pick = int(input("Enter and index: ").strip())
-    # mm.save_best(pick)
 

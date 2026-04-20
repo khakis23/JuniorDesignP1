@@ -1,5 +1,6 @@
 import random
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Callable
 
 # sklearn
@@ -281,6 +282,59 @@ class IModel(ABC):
         for pn, pv in self._parameters.items():
             val_str = _format_param_value(pv)
             print(f"{pn:<{longest_name + 1}} | {val_str}")
+
+    def write_scores_to_file(self, path: Path | str, append: bool = True) -> None:
+        """
+        Writes the model's evaluation metrics to a file in an aligned table format.
+        """
+        # Convert string path to Path object if necessary
+        path = Path(path)
+        mode = "a" if append else "w"
+
+        longest_name = max((len(sn) for sn in self._scores.keys()), default=0)
+        longest_score = 0
+
+        # Calculate max score string length for alignment
+        formatted_scores = {}
+        for sn, sv in self._scores.items():
+            if isinstance(sv, (list, np.ndarray, tuple)):
+                val_str = ", ".join(str(round(x, 3)) for x in sv)
+            else:
+                val_str = str(round(sv, 3))
+            formatted_scores[sn] = val_str
+            longest_score = max(longest_score, len(val_str))
+
+        with open(path, mode) as f:
+            f.write("\n\n————— Model Scores —————\n")
+            for sn, val_str in formatted_scores.items():
+                f.write(f"{sn:<{longest_name + 1}} | {val_str:>{longest_score + 1}}\n")
+
+    def write_parameters_to_file(self, path: Path | str, append: bool = True) -> None:
+        """
+        Writes model features and hyperparameter configuration to a file.
+        """
+        # Safety check: if there's nothing to write, just exit
+        if not self._parameters and not (hasattr(self, 'features') and self.features):
+            return
+
+        path = Path(path)
+        mode = "a" if append else "w"
+
+        with open(path, mode) as f:
+            # Write Features Section
+            if hasattr(self, 'features') and self.features:
+                f.write("\n————— Model Features —————\n")
+                f.write("  ".join(str(feat) for feat in self.features) + "\n")
+
+            # Write Parameters Section
+            if self._parameters:
+                f.write("\n————— Model Parameters —————\n")
+
+                longest_name = max((len(pn) for pn in self._parameters.keys()), default=0)
+
+                for pn, pv in self._parameters.items():
+                    val_str = _format_param_value(pv)
+                    f.write(f"{pn:<{longest_name + 1}} | {val_str}\n")
 
     def get_scores(self) -> dict[str, float]:
         return self._scores

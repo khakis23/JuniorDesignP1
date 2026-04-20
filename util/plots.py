@@ -3,6 +3,7 @@ from Models.models.DeepEnsemble import DeepEnsemble
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from util.SavePaths import SavePaths
 
 import matplotlib
 matplotlib.use('Agg')  # For leadless server
@@ -433,8 +434,10 @@ def plot_deep_ensemble_eval(model, x_dict, y_dict, figsize=(16, 6), title_suffix
                  verticalalignment='top', horizontalalignment='right', bbox=props, zorder=5)
 
     plt.tight_layout()
-    # plt.show()
-    plt.savefig(f"figures/DE_r2-{r2}.png", dpi=300, bbox_inches='tight')
+    if SavePaths.save_path:
+        plt.savefig(SavePaths.save_path / f"DE_r2-{round(r2, 8)}.png", dpi=300, bbox_inches='tight')
+    else:
+        plt.show()
 
 
 def plot_actual_vs_pred(model, x_dict, y_dict, figsize=(10, 8), title="Actual vs Predicted", **kwargs):
@@ -471,9 +474,11 @@ def plot_actual_vs_pred(model, x_dict, y_dict, figsize=(10, 8), title="Actual vs
     ax.legend(frameon=True, loc="upper left")
 
     plt.tight_layout()
-    # plt.show()
-    r2 = model.get_scores().get("R2", 0)
-    plt.savefig(f"figures/actual_vs_pred_{model.__class__.__name__}_r2-{r2}.png", dpi=300, bbox_inches='tight')
+    if SavePaths.save_path:
+        r2 = model.get_scores().get("R2", 0)
+        plt.savefig(SavePaths.save_path / f"act_vs_pred_{model.__class__.__name__}_r2-{round(r2, 8)}.png", dpi=300, bbox_inches='tight')
+    else:
+        plt.show()
 
 
 def plot_parity_with_uncertainty(model, x_dict, y_dict, figsize=(10, 8), title="parity plot with 95% ci", **kwargs):
@@ -520,8 +525,11 @@ def plot_parity_with_uncertainty(model, x_dict, y_dict, figsize=(10, 8), title="
 
     plt.tight_layout()
     # plt.show()
-    r2 = model.get_scores().get("R2", 0)
-    plt.savefig(f"figures/parity_with_uncertainty_{model.__class__.__name__}_r2-{round(r2, 5)}.png", dpi=300, bbox_inches='tight')
+    if SavePaths.save_path:
+        r2 = model.get_scores().get("R2", 0)
+        plt.savefig(SavePaths.save_path / f"par_uncert_{model.__class__.__name__}_r2-{round(r2, 8)}.png", dpi=300, bbox_inches='tight')
+    else:
+        plt.show()
 
 
 def deep_ensemble_wrapper(model, x, y, **kwargs):

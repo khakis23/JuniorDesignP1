@@ -1,9 +1,12 @@
 from Models.ModelMaker import ModelMaker
 from util.util import feature_combo
 from util.plots import *
+from util.arg_parser import parse_args_save_paths
 
 
 if __name__ == "__main__":
+    parse_args_save_paths()
+
     features = feature_combo(["D", "L", "P", "G",  "Tin", "Xe"], 4, 6)
     params = {
         "tts": [0.2],

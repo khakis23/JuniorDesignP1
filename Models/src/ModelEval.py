@@ -1,6 +1,7 @@
 import numpy as np
 
 from Models.src.IModel import IModel
+from util.SavePaths import SavePaths
 from abc import ABC
 
 
@@ -15,8 +16,12 @@ def _display(model: IModel, count: int=-1, score_name: str=""):
         print(f"\n\n======== Model {count} | Best {score_name} ========")
     model.plot()
     print("\n————— Scoring —————")
+    if SavePaths.save_results:
+        model.write_scores_to_file(SavePaths.save_path / f"{model.__class__.__name__}_results.txt")
     model.print_scores()
     print("\n ————— Model Parameters —————")
+    if SavePaths.save_results:
+        model.write_parameters_to_file(SavePaths.save_path / f"{model.__class__.__name__}_results.txt")
     model.print_parameters()
     print("\n————— Model Features ————— \n", *model.features, sep="  ")
 
