@@ -20,21 +20,21 @@ from scipy.stats import bootstrap
 import matplotlib.pyplot as plt
 
 
-def _format_param_value(value: any) -> str:
+def _format_param_value(value: any, decimals: int = 4) -> str:
     """
     Helper function to format hyperparameter values for printing.
-    Rounds numbers to 4 decimal places and cleanly joins iterables.
+    Rounds numbers to specified decimal places and cleanly joins iterables.
     """
     if isinstance(value, (list, np.ndarray, tuple)):
         # only attempt to round if the element is actually a number
         return ", ".join(
-            str(round(x, 4)) if isinstance(x, (int, float, np.number)) else str(x)
+            str(round(x, decimals)) if isinstance(x, (int, float, np.number)) else str(x)
             for x in value
         )
 
     # Handle single values
     if isinstance(value, (int, float, np.number)) and not isinstance(value, bool):
-        return str(round(value, 4))
+        return str(round(value, decimals))
 
     return str(value)
 
@@ -306,17 +306,11 @@ class IModel(ABC):
         longest_score = 0
 
         for sv in self._scores.values():
-            if isinstance(sv, (list, np.ndarray, tuple)):
-                val_str = ", ".join(str(round(x, 3)) for x in sv)
-            else:
-                val_str = str(round(sv, 3))
+            val_str = _format_param_value(sv, decimals=3)
             longest_score = max(longest_score, len(val_str))
 
         for sn, sv in self._scores.items():
-            if isinstance(sv, (list, np.ndarray, tuple)):
-                val_str = ", ".join(str(round(x, 3)) for x in sv)
-            else:
-                val_str = str(round(sv, 3))
+            val_str = _format_param_value(sv, decimals=3)
             print(f"{sn:<{longest_name + 1}} | {val_str:>{longest_score + 1}}")
 
     def print_parameters(self) -> None:
@@ -332,7 +326,7 @@ class IModel(ABC):
         longest_name = max((len(pn) for pn in self._parameters.keys()), default=0)
 
         for pn, pv in self._parameters.items():
-            val_str = _format_param_value(pv)
+            val_str = _format_param_value(pv, decimals=4)
             print(f"{pn:<{longest_name + 1}} | {val_str}")
 
     def write_scores_to_file(self, path: Path | str, append: bool = True) -> None:
@@ -349,10 +343,7 @@ class IModel(ABC):
         # Calculate max score string length for alignment
         formatted_scores = {}
         for sn, sv in self._scores.items():
-            if isinstance(sv, (list, np.ndarray, tuple)):
-                val_str = ", ".join(str(round(x, 3)) for x in sv)
-            else:
-                val_str = str(round(sv, 3))
+            val_str = _format_param_value(sv, decimals=3)
             formatted_scores[sn] = val_str
             longest_score = max(longest_score, len(val_str))
 
@@ -385,7 +376,7 @@ class IModel(ABC):
                 longest_name = max((len(pn) for pn in self._parameters.keys()), default=0)
 
                 for pn, pv in self._parameters.items():
-                    val_str = _format_param_value(pv)
+                    val_str = _format_param_value(pv, decimals=4)
                     f.write(f"{pn:<{longest_name + 1}} | {val_str}\n")
 
     def get_scores(self) -> dict[str, float]:

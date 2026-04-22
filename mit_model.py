@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "Reactor",
         features_list=features,
         params=params,
-        autosave="CV R2",
+        autosave="R2",
         plot_func=plot_actual_vs_pred,
         random_state=42,
         random_search=200,

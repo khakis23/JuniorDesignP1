@@ -41,6 +41,12 @@ class ModelEval:
 
         :return: {"<score_name>": <model_reference>, ...>}  (e.g.  {"R2": <ModelReference>, ...}
         """
+        def _check_ci(ci):
+            # NOTE some modes return an array-like structure and some return a float.
+            if isinstance(ci, tuple) or isinstance(ci, list) or isinstance(ci, np.ndarray):
+                return np.mean(ci)
+            return ci
+
         greater_than = ["R2", "CV R2", "95 CI"]
         less_than = ["RMSE", "MAE", "RMSE Clamped", "CI", "epSTD", "totalSTD"]
 
@@ -51,18 +57,14 @@ class ModelEval:
         self.best_models = {sn: self.models[0] for sn in best_scores.keys()}
 
         # CUSTOM parameters adjustment
-        if isinstance(best_scores["CI"], tuple):
-            best_scores["CI"] = abs(best_scores["CI"][1] - best_scores["CI"][0])
+        best_scores["CI"] = _check_ci(best_scores["CI"])
 
         for i, model in enumerate(self.models):
             if i == 0: continue  # already loaded first model into best_scores/best_models
             for sn, sv in model.get_scores().items():
 
                 # CUSTOM parameters
-                if sn == "CI" and isinstance(sv, tuple):
-                    # NOTE occasionally LSTMReg returns the range (not sure how this happens at the moment), so this
-                    #      is a patch to ensure nothing crashes.
-                    sv = abs(sv[1] - sv[0])
+                sv = _check_ci(sv)
 
                 # scores that are better when higher
                 if sn in greater_than and sn in best_scores:
@@ -73,6 +75,7 @@ class ModelEval:
 
                 # scores that better when lower
                 if sn in less_than and sn in best_scores:
+                    # print(f"{sv}: {sn}")  # TODO DEBUGGING
                     if sv < best_scores[sn]:
                         best_scores[sn] = sv
                         self.best_models[sn] = model
