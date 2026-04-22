@@ -94,7 +94,7 @@ class DeepEnsemble(IModel):
         # Base IModel expects _fit to be called, but we do that manually per-member in train_and_fit
         pass
 
-    def predict(self, x: pd.DataFrame = None) -> np.ndarray:
+    def predict(self, x: pd.DataFrame = None, cv_folds: int = 0) -> np.ndarray:
         if not self.models:
             raise RuntimeError("DeepEnsemble has not been trained yet.")
 

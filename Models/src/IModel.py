@@ -170,19 +170,8 @@ class IModel(ABC):
         :param folds: Integer defining the number of splits for TimeSeries Cross-Validation.
         """
         cv_r2 = np.nan
-
-        try:
-            ts_cv = TimeSeriesSplit(n_splits=folds)
-            cv_scores = cross_val_score(   # TODO broken with non-sklearn models!
-                self.model,
-                self._x["train"],
-                self._y["train"].values.ravel() if len(self.targets) == 1 else self._y["train"].values,
-                scoring="r2",
-                cv=ts_cv,
-            )
-            cv_r2 = np.mean(cv_scores)
-        except Exception:
-            cv_r2 = np.nan
+        if folds > 0:
+            cv_r2 = self._try_perform_cv(folds=folds)
 
         # Added multioutput handling for multi-target datasets
         self._scores = {
@@ -192,8 +181,57 @@ class IModel(ABC):
             "MAE": mean_absolute_error(y_true=self._y["test"], y_pred=self._predictions, multioutput="uniform_average"),
             "CI": self._get_bootstrap(r2_score)
         }
-        if cv_r2:
+        if not np.isnan(cv_r2):
             self._scores["CV R2"] = cv_r2
+
+    def _try_perform_cv(self, folds):
+        try:
+            ts_cv = TimeSeriesSplit(n_splits=folds)
+            cv_scores = []
+
+            # We use iloc later, so we keep these as DataFrames/Series, not bare numpy arrays
+            X_train_df = self._x["train"]
+            y_train_df = self._y["train"]
+
+            for train_idx, val_idx in ts_cv.split(X_train_df):
+                # 1. Reconstruct the DataFrames for this specific fold
+                X_fold_train = X_train_df.iloc[train_idx]
+                y_fold_train = y_train_df.iloc[train_idx]
+                data_fold_train = pd.concat([X_fold_train, y_fold_train], axis=1)
+
+                X_fold_val = X_train_df.iloc[val_idx]
+                y_fold_val = y_train_df.iloc[val_idx]
+                data_fold_val = pd.concat([X_fold_val, y_fold_val], axis=1)
+
+                # 2. Instantiate a fresh wrapper class.
+                # Passing data_test forces self._pre_split = True, bypassing TTS inside the fold.
+                WrapperClass = type(self)
+                fold_wrapper = WrapperClass(
+                    features=self.features,
+                    targets=self.targets,
+                    data=data_fold_train,
+                    data_test=data_fold_val,
+                    plot_func=None  # Plotting not needed for CV folds
+                )
+
+                # 3. Clean the parameters (remove results prefixed with '_' and 'tts')
+                clean_params = {k: v for k, v in self.get_parameters().items() if not k.startswith('_')}
+                clean_params.pop("tts", None)
+
+                # 4. Train the fold wrapper using your standard pipeline
+                fold_wrapper.train_and_fit(tts=0.0, **clean_params)
+
+                # 5. Predict and score
+                fold_preds = fold_wrapper.predict(X_fold_val, cv_folds=0)
+                score = r2_score(y_fold_val, fold_preds, multioutput="uniform_average")
+                cv_scores.append(score)
+
+            return np.mean(cv_scores)
+
+        except Exception as e:
+            print(f"Error during CV: {e}")
+            return np.nan
+
 
     def _get_bootstrap(self, score_func: Callable, n_resamples: int = 1000) -> tuple[float, float]:
         """
@@ -203,25 +241,28 @@ class IModel(ABC):
         :param n_resamples: Integer dictating how many bootstrap iterations to perform.
         :return:            Tuple containing the (lower_bound, upper_bound) of the confidence interval.
         """
-        y_true = np.ravel(self._y["test"].values)
-        y_pred = np.ravel(self._predictions)
+        y_true = self._y["test"].values
+        y_pred = self._predictions
 
-        # bootstrap requires at least 2 samples
         if len(y_true) < 2:
             return np.nan, np.nan
 
-        # Ravel ensures multidimensional outputs are flattened properly for scipy's bootstrap pairing
+        # wrapper that matches the uniform_average logic used in _score
+        def wrapped_score(y_t, y_p):
+            return score_func(y_t, y_p, multioutput="uniform_average")
+
         res = bootstrap(
             (y_true, y_pred),
-            score_func,
+            wrapped_score,
             vectorized=False,
             paired=True,
             n_resamples=n_resamples,
             method='percentile',
-            random_state=self._random_state)
+            random_state=self._random_state
+        )
         return res.confidence_interval.low, res.confidence_interval.high
 
-    def predict(self, x: pd.DataFrame = None) -> np.ndarray:
+    def predict(self, x: pd.DataFrame = None, cv_folds: int = 5) -> np.ndarray:
         """
         Generates predictions and handles internal routing for evaluation.
 
@@ -229,20 +270,31 @@ class IModel(ABC):
         automatically evaluates on the internal test set and triggers `self._score()`. If it was trained
         on the full dataset (final model), it predicts on the full dataset or the optionally provided `x`.
 
+        :param cv_folds:
         :param x:  (Optional) External Pandas DataFrame to generate predictions for.
         :return:   Numpy array containing the predictions.
         """
         if self.model is None:
             raise ValueError("Model has not been trained!")
 
-        # Evaluate if it is a testing model (TTS > 0 or Pre-split)
-        if self._test_size > 0 or self._pre_split:
-            self._predictions = self.model.predict(self._x["test"])
-            self._score()
-        # final models
+        # determine which data to evaluate
+        if x is not None:
+            X_eval = x
+        elif self._test_size > 0 or self._pre_split:
+            X_eval = self._x["test"]
         else:
-            x = self._x["full"] if x is None else x
-            self._predictions = self.model.predict(x)
+            X_eval = self._x["full"]
+
+        # optional method
+        if hasattr(self, '_predict_engine'):
+            self._predictions = self._predict_engine(X_eval)
+        # default unlying predict
+        else:
+            self._predictions = self.model.predict(X_eval)
+
+        # score only if we are testing
+        if x is None and (self._test_size > 0 or self._pre_split):
+            self._score(folds=cv_folds)
 
         return self._predictions
 

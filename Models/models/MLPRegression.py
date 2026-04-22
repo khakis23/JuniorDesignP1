@@ -21,7 +21,7 @@ class MLPRegression(IModel):
         - epistemic uncertainty  (variance of member means)
 
     Important behavior:
-        - predict(x) returns mean only, so the rest of the project can still work.
+        - predict(x) routes through IModel, deferring to _predict_engine for the math.
         - predict_mean_variance(x) returns (mu, var) for deep ensemble use.
     """
 
@@ -43,6 +43,8 @@ class MLPRegression(IModel):
         hidden_layer_sizes = kwargs.pop("hidden_layer_sizes", (100, 100))
         if isinstance(hidden_layer_sizes, int):
             hidden_layer_sizes = (hidden_layer_sizes,)
+
+        n_folds = kwargs.pop("folds", 0)
 
         activation = kwargs.pop("activation", "relu")
         optimizer_name = kwargs.pop("optimizer", "adam")
@@ -156,7 +158,6 @@ class MLPRegression(IModel):
             "validation_split": self._tf_params.get("validation_split"),
             "early_stopping": self._tf_params.get("early_stopping"),
             "l2_alpha": self._tf_params.get("l2_alpha"),
-            # "output_type": self._tf_params.get("output_type"),
             "log_var_min": self._tf_params.get("log_var_min"),
             "log_var_max": self._tf_params.get("log_var_max"),
 
@@ -166,10 +167,8 @@ class MLPRegression(IModel):
             "_final_val_loss": float(history_val_loss[-1]) if history_val_loss else None,
         }
 
-        # Do NOT call self._fit() as Keras models are already fit above.
-        # If we need predictions initialized immediately:
         if self._test_size > 0 or self._pre_split:
-            self.predict()  # This will populate self._predictions and call self._score()
+            self.predict(cv_folds=n_folds)
 
     def _build_model(
             self,
@@ -258,20 +257,12 @@ class MLPRegression(IModel):
             raise RuntimeError("Scaler has not been fit yet.")
         return ((X - self.scaler_mean_) / self.scaler_std_).astype(np.float32)
 
-    def predict(self, x: pd.DataFrame = None) -> np.ndarray:
+    def _predict_engine(self, x) -> np.ndarray:
         """
-        Predict using parameter x or full dataset (if final model), or x_test (if testing model).
-        Returns mean prediction only.
+        Internal method mapped to IModel's predict routing.
+        Handles the raw Keras math and inverse scaling.
         """
-        if self.model is None:
-            raise RuntimeError("MLPRegression model has not been trained yet.")
-
-        if (self._test_size > 0 or self._pre_split) and x is None:
-            X_eval = self._x["test"]
-        else:
-            X_eval = self._x["full"] if x is None else x
-
-        X_array = np.asarray(X_eval, dtype=np.float32)
+        X_array = np.asarray(x, dtype=np.float32)
         X_scaled = self._transform_features(X_array)
         raw = self.model.predict(X_scaled, verbose=0)
 
@@ -279,13 +270,7 @@ class MLPRegression(IModel):
 
         # Grab means and inverse scale them
         mu_scaled = raw[:, :num_targets]
-        self._predictions = (mu_scaled * self.y_std_) + self.y_mean_
-
-        # If we predicted on the test set, update scores
-        if (self._test_size > 0 or self._pre_split) and x is None:
-            self._score()
-
-        return self._predictions
+        return (mu_scaled * self.y_std_) + self.y_mean_
 
     def predict_mean_variance(self, X):
         """Return mean and variance for deep ensemble use."""

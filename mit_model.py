@@ -10,21 +10,25 @@ if __name__ == "__main__":
     features = feature_combo(["rod_worth", "beta", "h_gap", "gamma_frac"], 2, 4)
     params = {
         "tts": [0.2],
+        "folds": [4],
         "log_var_min": [-10.0],
         "log_var_max": [10.0],
-        "validation_split": [0.1],
+        "validation_split": [0.15, 0.2],
         "early_stopping": [1],
-        "epochs": [1000],
+        "patience": [15, 25, 40],
+        "epochs": [1500],
         "hidden_layer_sizes": [
             (64, 32),
             (128, 64, 32),
-            (256, 128, 64, 32),
-            (128, 128, 128)
+            (256, 128, 64),
+            (64, 64, 64),
+            (128, 128, 128),
+            (512, 256, 128, 64)
         ],
-        "learning_rate": [0.01, 0.001, 0.0001],
-        "batch_size": [32, 64, 128],
-        "l2_alpha": [0.0, 0.0001, 0.001],
-        "activation": ["relu", "elu", "swish"]
+        "learning_rate": [0.01, 0.005, 0.001, 0.0005, 0.0001],
+        "batch_size": [16, 32, 64],
+        "l2_alpha": [0.0, 0.0001, 0.001, 0.01],
+        "activation": ["relu", "swish", "elu"]
     }
 
     mm = ModelMaker()
@@ -33,7 +37,7 @@ if __name__ == "__main__":
         "Reactor",
         features_list=features,
         params=params,
-        autosave="R2",
+        autosave="CV R2",
         plot_func=plot_actual_vs_pred,
         random_state=42,
         random_search=200,
