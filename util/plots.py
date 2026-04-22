@@ -316,10 +316,19 @@ def plot_deep_ensemble_eval(model, x_dict, y_dict, figsize=(16, 6), title_suffix
     # generate predictions
     model.predict(x_eval)
 
-    mean_pred = model.mean_prediction.ravel()
-    std_pred = model.prediction_std.ravel()
+    y_eval_arr = np.asarray(y_eval)
+
+    # Extract only the first target if dataset is multi-target
+    if y_eval_arr.ndim > 1 and y_eval_arr.shape[1] > 1:
+        mean_pred = model.mean_prediction[:, 0]
+        std_pred = model.prediction_std[:, 0]
+        y_true = y_eval_arr[:, 0]
+    else:
+        mean_pred = model.mean_prediction.ravel()
+        std_pred = model.prediction_std.ravel()
+        y_true = y_eval_arr.ravel()
+
     member_means = model.member_means
-    y_true = np.asarray(y_eval).ravel()
 
     # sort data by true values for a readable curve
     sort_idx = np.argsort(y_true)

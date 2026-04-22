@@ -30,5 +30,5 @@ if __name__ == "__main__":
     mm.train_eval_deep_ens(
         "CHF",
         plot_func=deep_ensemble_wrapper,
-        n_models=2,
+        n_models=3,
     )
