@@ -10,18 +10,21 @@ if __name__ == "__main__":
     features = feature_combo(["D", "L", "P", "G",  "Tin", "Xe"], 4, 6)
     params = {
         "tts": [0.2],
-        "log_var_min": [-10.0],
-        "log_var_max": [10.0],
+        "log_var_min": [-7.0, -5.0],
+        "log_var_max": [5.0, 10.0],
         "validation_split": [0.1],
         "early_stopping": [1],
         "epochs": [1000],
         "hidden_layer_sizes": [
+            (32, 16),
             (64, 32),
+            (32, 32, 32),
             (128, 64, 32),
+            (64, 64, 64),
             (256, 128, 64, 32),
             (128, 128, 128)
         ],
-        "learning_rate": [0.01, 0.001, 0.0001],
+        "learning_rate": [0.01, 0.001, 0.0001, 0.0005],
         "batch_size": [32, 64, 128],
         "l2_alpha": [0.0, 0.0001, 0.001],
         "activation": ["relu", "elu", "swish"]
@@ -36,7 +39,7 @@ if __name__ == "__main__":
         autosave="R2",
         plot_func=plot_actual_vs_pred,
         random_state=42,
-        random_search=200
+        random_search=300
     )
     mm.train_eval_deep_ens(
         "CHF",
