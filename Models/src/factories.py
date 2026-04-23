@@ -20,6 +20,7 @@ MODEL_FACTORY = {
 # Built-in datasets go here:
 #   - must return (features, targets, data, <optional>data_test)
 DATABASE_FACTORY = {
-    "CHF": h.load_CHF,
+    "CHF": h.load_chf,
     "Reactor": h.load_reactor,
+    "BWR": h.load_bwr,
 }

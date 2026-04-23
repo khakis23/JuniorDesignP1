@@ -4,7 +4,7 @@ from pathlib import Path
 DIR = Path(__file__).resolve().parent
 
 
-def load_CHF(train_path='chf_train_synth.csv', test_path='chf_test_synth.csv'):
+def load_chf(train_path='chf_train_synth.csv', test_path='chf_test_synth.csv'):
     """
     CHF Data — Pre-split train/test
 
@@ -54,6 +54,25 @@ def load_reactor(input_path='rea_inputs.csv', output_path='rea_outputs.csv'):
 
     return feature_cols, target_cols, data_df
 
+
+def load_bwr(input_path="bwr_input.csv", output_path="bwr_output.csv"):
+    """
+    Boiler Water Reactor Data
+
+    Inputs: PSZ, DOM, vanA, vanB, subcool, CRD, flow_rate, power_density, VFNGAP
+    Outputs: K-eff, Max3Pin, Max4Pin, F-delta-H, Max-Fxy
+
+    :return: features, targets, data_df
+    """
+    x_df = pd.read_csv(DIR / input_path)
+    y_df = pd.read_csv(DIR / output_path)
+
+    data_df = pd.concat([x_df, y_df], axis=1)
+
+    feature_cols = ['PSZ', 'DOM', 'vanA', 'vanB', 'subcool', 'CRD', 'flow_rate', 'power_density', 'VFNGAP']
+    target_cols = ['K-eff', 'Max3Pin', 'Max4Pin', 'F-delta-H', 'Max-Fxy']
+
+    return feature_cols, target_cols, data_df
 
 
 if __name__ == "__main__":

@@ -57,14 +57,16 @@ class ModelEval:
         self.best_models = {sn: self.models[0] for sn in best_scores.keys()}
 
         # CUSTOM parameters adjustment
-        best_scores["CI"] = _check_ci(best_scores["CI"])
+        if "CI" in best_scores:
+            best_scores["CI"] = _check_ci(best_scores["CI"])
 
         for i, model in enumerate(self.models):
             if i == 0: continue  # already loaded first model into best_scores/best_models
             for sn, sv in model.get_scores().items():
 
                 # CUSTOM parameters
-                sv = _check_ci(sv)
+                if sn == "CI":
+                    sv = _check_ci(sv)
 
                 # scores that are better when higher
                 if sn in greater_than and sn in best_scores:
