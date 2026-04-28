@@ -273,7 +273,11 @@ class MLPRegression(IModel):
         return (mu_scaled * self.y_std_) + self.y_mean_
 
     def predict_mean_variance(self, X):
-        """Return mean and variance for deep ensemble use."""
+        """
+        Calls self.predict().
+
+        Return mean and variance for deep ensemble use.
+        """
         if self.model is None:
             raise RuntimeError("MLPRegression model has not been trained yet.")
 
