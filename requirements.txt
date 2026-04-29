@@ -1,17 +1,13 @@
-# Core Scientific Stack
 numpy>=1.26.0
 pandas>=2.2.0
 scipy>=1.12.0
 matplotlib>=3.8.0
 
-# Machine Learning & Uncertainty Quantification
 scikit-learn>=1.4.0
 
-# Deep Learning with GPU Support (Optimized for RTX 50-series)
-# The [and-cuda] extra ensures proper GPU library linking in 2026
 tensorflow[and-cuda]>=2.15.0
 
-# Optional but recommended for Jupyter and Keras model saving
+# for Jupyter and Keras model saving
 h5py>=3.10.0
 ipykernel
 

@@ -16,10 +16,10 @@ if __name__ == "__main__":
         params={
             "tts": 0.2,
             "activation": ["relu"],
-            "hidden_layer_sizes": [(128, 64, 32)],
+            "hidden_layer_sizes": [(64, 32)],
             "learning_rate": [0.001],
             "l2_alpha": [.0001],
-            "epochs": 50,
+            "epochs": 5,
             "early_stopping": True,
         },
         plot_func=plot_actual_vs_pred,
@@ -31,4 +31,5 @@ if __name__ == "__main__":
         "CHF",
         plot_func=deep_ensemble_wrapper,
         n_models=3,
+        random_state=42,
     )

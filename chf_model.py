@@ -46,9 +46,11 @@ if __name__ == "__main__":
         "CHF",
         plot_func=deep_ensemble_wrapper,
         n_models=6,
+        random_state=42,
     )
     mm.train_eval_deep_ens(
         "CHF",
         plot_func=deep_ensemble_wrapper,
         n_models=100,
+        random_state=42,
     )
