@@ -275,8 +275,7 @@ temperature, outlet equilibrium quality, and CHF; 6 inputs to 1 output. Thus, th
 CHF and return uncertainty given the six inputs specified previously.
 
 ### CHF Dataset Results
-
-TODO RESULTS AND PLOTS — We can all do one of these? for each dataset? short ans sweet
+![CHF Dataset Results](/readme_assets/DE_CHF.png)
 
 ### MIT Reactor Dataset
 
