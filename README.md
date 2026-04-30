@@ -277,6 +277,8 @@ CHF and return uncertainty given the six inputs specified previously.
 ### CHF Dataset Results
 ![CHF Dataset Results](/readme_assets/DE_CHF.png)
 
+The Deep Ensemble model showed strong agreement with the CHF dataset results. Each ensemble member followed the overall trend of the true CHF values across the dataset, with small differences appearing at higher CHF values where the relationship becomes more complex. The model produced an $R^2$ value of 0.984 and an RMSE of 170.8, indicating solid accuracy in its estimates. Most of the variation in the outputs is likely caused by noise within the data rather than issues with the model itself. The 95% confidence interval of approximately 0.986 also indicates that the uncertainty estimates are dependable.
+
 ### MIT Reactor Dataset
 
 A nuclear reactors control blades or rods serve a critical role of managing electrical power output of the station itself.
@@ -295,6 +297,9 @@ The reactor dataset contains 1000 samples, each with 6 inputs and 22 outputs. Th
 output of the 22 fuel elements given the height of each of the 6 control blades.
 
 ### MIT Reactor Dataset Results
+![MIT Reactor Dataset Results](/readme_assets/DE_MIT.png)
+
+The Deep Ensemble model performed very well on the MIT reactor dataset, showing close alignment between the predicted and true values across the full range of samples. The ensemble members captured the overall behavior of the system with only small differences at higher power levels, where the system becomes more sensitive to changes in inputs. The model achieved an $R^2$ of 0.980 and RMSE of 3.0, showing accurate and consistent estimates. The spread appears to be largely influenced by natural variability in the data rather than uncertainty in the model structure. The 95% CI of approximately 0.978 supports the uncertainty measurements. 
 
 ### Boiling Water Reactor (BWR) Micro Core Dataset
 
@@ -307,8 +312,9 @@ vertical fuel distribution, cooling conditions, and control element geometry/arr
 and localized power density in a 2D slice and 3D mapping.
 
 ### BWR Micro Core Dataset Results
+![BWR Micro Core Dataset Results](/readme_assets/DE_BWR.png)
 
+The BWR dataset produced accurate results that closely matched the true  values across the samples. The model achieved an $R^2$ value of 0.879 and an RMSE of 0.2, indicating good agreement between predictions and measured data. The uncertainty remained relatively low, and the 95% confidence interval of approximately 0.992 suggests the model provides reliable estimates
 
-## Discussion & Conclusion
-
-TODO 
+## Conclusion
+Overall, the Deep Ensemble model produced accurate predictions and consistent uncertainty estimates across the tested datasets. The results remained stable across different problem types, showing that the model was able to capture the underlying trends in the data while maintaining reliable performance. The uncertainty measurements also provided useful insight into prediction confidence, especially in regions where the data becomes more complex. These findings support the effectiveness of the Deep Ensemble approach as a dependable method for modeling.
